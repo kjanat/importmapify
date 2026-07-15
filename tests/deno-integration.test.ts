@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { which } from 'bun';
-import { writeImportMap } from './import-map.ts';
+import { writeImportMap } from '#src/map';
 
 const denoPath = which('deno');
 

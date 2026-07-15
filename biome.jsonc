@@ -1,5 +1,5 @@
 {
-	"$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+	"$schema": "./node_modules/biome/configuration_schema.json",
 	"vcs": {
 		"enabled": true,
 		"clientKind": "git",
@@ -10,9 +10,9 @@
 		"includes": ["**", "!!**/dist"]
 	},
 	"formatter": {
-		"enabled": false,
+		"enabled": true,
 		"indentStyle": "tab",
-		"lineWidth": 100
+		"lineWidth": 115
 	},
 	"linter": {
 		"enabled": true,
@@ -21,18 +21,24 @@
 			"test": "recommended"
 		},
 		"rules": {
-			"a11y": { "recommended": true },
-			"complexity": { "recommended": true, "useLiteralKeys": "off" },
-			"correctness": { "recommended": true },
-			"performance": { "recommended": true },
-			"nursery": { "recommended": true },
-			"security": { "recommended": true },
-			"style": { "recommended": true },
-			"suspicious": { "recommended": true }
+			"preset": "all",
+			"correctness": {
+				"noNodejsModules": "off",
+				"noUnresolvedImports": "off",
+				"useQwikClasslist": "off",
+				"useQwikValidLexicalScope": "off"
+			},
+			"style": {
+				"noDefaultExport": "off",
+				"noNestedTernary": "off",
+				"noTernary": "off",
+				"useBlockStatements": "off"
+			}
 		}
 	},
 	"javascript": {
-		"formatter": { "quoteStyle": "single" }
+		"formatter": { "quoteStyle": "single" },
+		"globals": ["Bun", "Deno"]
 	},
 	"json": { "formatter": { "enabled": false } },
 	"assist": {
@@ -43,8 +49,25 @@
 	},
 	"overrides": [
 		{
-			"includes": ["**/*.jsonc", "!biome.jsonc"],
+			"includes": ["**/*.jsonc", ".zed/settings.json", "!biome.jsonc"],
 			"json": { "formatter": { "trailingCommas": "all" } }
+		},
+		{
+			"includes": ["scripts/**"],
+			"linter": { "rules": { "suspicious": { "noConsole": "off" } } }
+		},
+		{
+			"includes": ["src/{index,mod}.ts"],
+			"linter": { "rules": { "performance": { "noBarrelFile": "off" } } }
+		},
+		{
+			"includes": ["**/*.test.ts"],
+			"linter": {
+				"rules": {
+					"complexity": { "noExcessiveLinesPerFunction": "off" },
+					"style": { "noMagicNumbers": "off" }
+				}
+			}
 		}
 	]
 }

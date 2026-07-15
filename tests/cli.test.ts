@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { runCommand } from 'dreamcli/testkit';
-import { generateCommand } from './cli.ts';
+import { generateCommand } from '#src/cli';
 
 const roots: string[] = [];
 
@@ -11,10 +11,7 @@ afterEach(() => {
 	for (const root of roots.splice(0)) fs.rmSync(root, { recursive: true, force: true });
 });
 
-function fixture(
-	imports: Readonly<Record<string, unknown>>,
-	files: readonly string[] = [],
-): string {
+function fixture(imports: Readonly<Record<string, unknown>>, files: readonly string[] = []): string {
 	const root = fs.mkdtempSync(path.join(os.tmpdir(), 'importmapify-cli-'));
 	roots.push(root);
 	fs.writeFileSync(path.join(root, 'package.json'), JSON.stringify({ imports }));
@@ -71,13 +68,7 @@ describe('generateCommand', () => {
 
 	it('rejects an --import value with no "="', async () => {
 		const root = fixture({});
-		const result = await runCommand(generateCommand, [
-			'--root',
-			root,
-			'--stdout',
-			'--import',
-			'nokeyvalue',
-		]);
+		const result = await runCommand(generateCommand, ['--root', root, '--stdout', '--import', 'nokeyvalue']);
 		expect(result.exitCode).not.toBe(0);
 	});
 

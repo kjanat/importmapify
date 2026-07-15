@@ -22,7 +22,7 @@ jobs:
       - uses: oven-sh/setup-bun@v2
       - uses: kjanat/runner@master
       - run: runner install -f build typecheck check test:coverage test:smoke
-      - run: node --run runbin --help
+      - run: node --run runbin -- --help
 
   publish:
     if: startsWith(github.ref, 'refs/tags/v')

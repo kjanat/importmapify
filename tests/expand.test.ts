@@ -1,11 +1,7 @@
 import { describe, expect, it } from 'bun:test';
-import {
-	expandPattern,
-	isRebasableTarget,
-	parsePattern,
-	rebaseTarget,
-	resolveCondition,
-} from './expand.ts';
+import { expandPattern, isRebasableTarget, parsePattern, rebaseTarget, resolveCondition } from '#src/expand';
+
+const PATTERN_MISMATCH = /both sides must contain/;
 
 describe('parsePattern', () => {
 	it('returns undefined for two exact strings', () => {
@@ -23,11 +19,11 @@ describe('parsePattern', () => {
 	});
 
 	it('throws when only the key has a star', () => {
-		expect(() => parsePattern('#lib/*', './src/lib/index.ts')).toThrow(/both sides must contain/);
+		expect(() => parsePattern('#lib/*', './src/lib/index.ts')).toThrow(PATTERN_MISMATCH);
 	});
 
 	it('throws when only the target has a star', () => {
-		expect(() => parsePattern('#lib', './src/lib/*.ts')).toThrow(/both sides must contain/);
+		expect(() => parsePattern('#lib', './src/lib/*.ts')).toThrow(PATTERN_MISMATCH);
 	});
 });
 
@@ -85,17 +81,14 @@ describe('resolveCondition', () => {
 	});
 
 	it('picks the first matching condition in order', () => {
-		expect(
-			resolveCondition({ default: './default.ts', import: './import.ts' }, ['import', 'default']),
-		).toBe('./import.ts');
+		expect(resolveCondition({ default: './default.ts', import: './import.ts' }, ['import', 'default'])).toBe(
+			'./import.ts',
+		);
 	});
 
 	it('recurses into a nested condition object', () => {
 		expect(
-			resolveCondition({ import: { types: './x.d.ts', default: './import.ts' } }, [
-				'import',
-				'default',
-			]),
+			resolveCondition({ import: { types: './x.d.ts', default: './import.ts' } }, ['import', 'default']),
 		).toBe('./import.ts');
 	});
 
@@ -129,14 +122,10 @@ describe('rebaseTarget', () => {
 	});
 
 	it('rebases against a nested output directory', () => {
-		expect(rebaseTarget('/repo', '/repo/.cache/maps', './src/lib/bytes.ts')).toBe(
-			'../../src/lib/bytes.ts',
-		);
+		expect(rebaseTarget('/repo', '/repo/.cache/maps', './src/lib/bytes.ts')).toBe('../../src/lib/bytes.ts');
 	});
 
 	it('passes through non-rebasable targets unchanged', () => {
-		expect(rebaseTarget('/repo', '/repo/.cache/maps', 'jsr:@deno/doc@0.199.0')).toBe(
-			'jsr:@deno/doc@0.199.0',
-		);
+		expect(rebaseTarget('/repo', '/repo/.cache/maps', 'jsr:@deno/doc@0.199.0')).toBe('jsr:@deno/doc@0.199.0');
 	});
 });

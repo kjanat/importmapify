@@ -2,18 +2,16 @@ import { afterEach, describe, expect, it } from 'bun:test';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { createImportMap, formatImportMap, writeImportMap } from './import-map.ts';
+import { createImportMap, formatImportMap, writeImportMap } from '#src/map';
 
 const roots: string[] = [];
+const PATTERN_MISMATCH = /both sides must contain/;
 
 afterEach(() => {
 	for (const root of roots.splice(0)) fs.rmSync(root, { recursive: true, force: true });
 });
 
-function fixture(
-	imports: Readonly<Record<string, unknown>>,
-	files: readonly string[] = [],
-): string {
+function fixture(imports: Readonly<Record<string, unknown>>, files: readonly string[] = []): string {
 	const root = fs.mkdtempSync(path.join(os.tmpdir(), 'importmapify-'));
 	roots.push(root);
 	fs.writeFileSync(path.join(root, 'package.json'), JSON.stringify({ imports }));
@@ -53,10 +51,7 @@ describe('createImportMap', () => {
 	});
 
 	it('expands a pattern with a static filename prefix', () => {
-		const root = fixture({ '#lib/*': './src/prefix-*.ts' }, [
-			'src/prefix-bytes.ts',
-			'src/ignored.ts',
-		]);
+		const root = fixture({ '#lib/*': './src/prefix-*.ts' }, ['src/prefix-bytes.ts', 'src/ignored.ts']);
 		expect(createImportMap({ root })).toEqual({
 			imports: {
 				'#lib/bytes': './src/prefix-bytes.ts',
@@ -87,7 +82,7 @@ describe('createImportMap', () => {
 
 	it('throws when only one side of a mapping contains a star', () => {
 		const root = fixture({ '#lib/*': './src/lib/index.ts' });
-		expect(() => createImportMap({ root })).toThrow(/both sides must contain/);
+		expect(() => createImportMap({ root })).toThrow(PATTERN_MISMATCH);
 	});
 
 	it('combines exact and pattern entries', () => {
@@ -145,8 +140,16 @@ describe('formatImportMap', () => {
 		const secondMap = createImportMap({
 			root: fixture({ '#A': './upper.ts', '#a': './a.ts', '#ä': './umlaut.ts', '#z': './z.ts' }),
 		});
-		const expected =
-			'{\n\t"imports": {\n\t\t"#A": "./upper.ts",\n\t\t"#a": "./a.ts",\n\t\t"#z": "./z.ts",\n\t\t"#ä": "./umlaut.ts"\n\t}\n}\n';
+		const expected = `\
+{
+	"imports": {
+		"#A": "./upper.ts",
+		"#a": "./a.ts",
+		"#z": "./z.ts",
+		"#ä": "./umlaut.ts"
+	}
+}
+`;
 
 		expect(formatImportMap(firstMap)).toBe(expected);
 		expect(formatImportMap(secondMap)).toBe(expected);

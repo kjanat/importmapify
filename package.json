@@ -26,33 +26,32 @@
 	"sideEffects": false,
 	"type": "module",
 	"imports": {
-		"#pkg": "./package.json"
+		"#pkg": "./package.json",
+		"#src/*": "./src/*.ts"
 	},
 	"exports": {
 		".": {
-			"types": "./dist/index.d.mts",
-			"default": "./dist/index.mjs"
+			"types": "./dist/mod.d.mts",
+			"default": "./dist/mod.mjs"
 		},
 		"./package.json": "./package.json"
 	},
 	"types": "./dist/index.d.mts",
 	"bin": {
-		"importmapify": "dist/importmapify.mjs"
+		"importmapify": "dist/mod.mjs"
 	},
-	"files": [
-		"dist"
-	],
+	"files": ["dist", "README.md", "LICENSE", "package.json", "jsr.json"],
 	"scripts": {
 		"bd": "tsdown",
 		"build": "tsdown",
 		"build:watch": "tsdown --watch",
 		"check": "biome check",
 		"check:fix": "biome check --fix",
-		"fmt": "dprint fmt",
+		"fmt": "biome check --fix 2>/dev/null; dprint fmt",
 		"lint": "biome lint",
 		"prepack": "bun --bun bd -l error",
 		"prepublishOnly": "[ -n \"${GITHUB_ACTIONS:-}\" ] || { printf '%s\\n' 'manual npm publish blocked; use release workflow for provenance' >&2; exit 1; }",
-		"runbin": "node \"$(jq -r '.bin.[]' package.json)\" --help",
+		"runbin": "node \"$(jq -r '.bin.[]' package.json)\"",
 		"test": "bun test --coverage",
 		"test:coverage": "bun test --coverage",
 		"test:smoke": "node scripts/smoke.mjs",
@@ -60,14 +59,14 @@
 		"typecheck": "bunx @typescript/native --noEmit"
 	},
 	"dependencies": {
-		"dreamcli": "npm:@kjanat/dreamcli@^3.0.0-rc.9"
+		"dreamcli": "npm:@kjanat/dreamcli@^3.0.0-rc.11"
 	},
 	"devDependencies": {
 		"@arethetypeswrong/core": "^0.18.5",
-		"@biomejs/biome": "2.5.2 || ^2.5.4",
 		"@types/bun": "^1.3.14",
 		"@types/node": "^26.1.1",
 		"@typescript/native": "npm:typescript@^7",
+		"biome": "npm:@biomejs/biome@^2.5.4",
 		"dprint": "^0.55.2",
 		"publint": "^0.3.21",
 		"sort-package-json": "^4.0.0",
@@ -78,7 +77,8 @@
 	"packageManager": "bun@1.3.14",
 	"engines": {
 		"bun": ">=1.3",
-		"node": ">=24"
+		"deno": ">=2",
+		"node": ">=22.22.2 <23 || >=24.2"
 	},
 	"volta": {
 		"node": "26.5.0",

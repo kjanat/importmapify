@@ -1,10 +1,10 @@
 {
 	"$schema": "https://www.schemastore.org/tsconfig.json",
 	"compilerOptions": {
-		"target": "ES2024",
-		"module": "NodeNext",
-		"moduleResolution": "NodeNext",
-		"lib": ["ES2024"],
+		"target": "ESNext",
+		"module": "esnext",
+		"moduleResolution": "bundler",
+		"lib": ["ESNext"],
 		"strict": true,
 		"noUncheckedIndexedAccess": true,
 		"exactOptionalPropertyTypes": true,
@@ -18,8 +18,8 @@
 		"noEmit": true,
 		"isolatedDeclarations": true,
 		"stripInternal": true,
-		"types": ["node", "bun"]
+		"types": ["*"]
 	},
-	"include": ["./src/**/*.ts"],
+	"include": ["./src/**/*.ts", "./tests/**/*.ts"],
 	"exclude": ["./dist", "./node_modules"]
 }
