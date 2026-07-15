@@ -44,6 +44,7 @@ jobs:
       - name: Publish to npm
         env: { NPM_CONFIG_PROVENANCE: "${{ vars.NPM_CONFIG_PROVENANCE }}" }
         run: |
+          if (npm view "$(jq -r .name package.json)@$(jq -r .version package.json)" version 2>$null) { exit 0 }
           $tag = $env:GITHUB_REF_NAME -like '*-*' ? 'beta' : 'latest'
           bunx npm@11 publish --access public --tag $tag; exit $LASTEXITCODE
 
