@@ -1,5 +1,9 @@
 # importmapify
 
+[![NPM](https://img.shields.io/npm/v/importmapify?logo=npm&labelColor=CB3837&color=black)][npm]
+[![CI](https://github.com/kjanat/importmapify/actions/workflows/publish.yml/badge.svg)][ci]
+[![Socket](https://badge.socket.dev/npm/package/importmapify)][socket]
+
 Expand `package.json` subpath-pattern imports into the explicit entries a
 [Deno import map] needs.
 
@@ -10,6 +14,9 @@ one entry per matched source file instead. This package performs that
 expansion and writes a deterministically sorted import map.
 
 [Deno import map]: https://docs.deno.com/runtime/fundamentals/modules/#differentiating-between-imports-or-importmap-in-deno.json-and---import-map-option
+[ci]: https://github.com/kjanat/importmapify/actions/workflows/publish.yml
+[npm]: https://npm.im/importmapify
+[socket]: https://socket.dev/npm/package/importmapify
 
 ## Install
 
