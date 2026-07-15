@@ -55,7 +55,7 @@ export default defineConfig({
 				name: pkg.name.startsWith('@') ? pkg.name : `${JSR_SCOPE}/${pkg.name}`,
 				version: pkg.version,
 				exports: './src/mod.ts',
-				publish: { include: ['/src/**/*.ts', '/README.md', '/LICENSE', '/jsr.json', '/package.json'] },
+				publish: { include: ['./src/**/*.ts', './README.md', './LICENSE', './jsr.json', './package.json'] },
 				homepage: pkg.homepage,
 				repository: pkg.repository,
 				license: pkg.license,

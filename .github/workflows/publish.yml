@@ -15,7 +15,7 @@ defaults: { run: { shell: pwsh } }
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 5
     steps:
       - { uses: actions/checkout@v7, with: { persist-credentials: false } }
       - { uses: actions/setup-node@v7, with: { node-version-file: .node-version, package-manager-cache: false } }
@@ -24,11 +24,11 @@ jobs:
       - run: runner install -f build typecheck check test:coverage test:smoke
       - run: node --run runbin -- --help
 
-  publish:
+  npm:
     if: startsWith(github.ref, 'refs/tags/v')
     needs: test
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 5
     environment: { name: npm, url: "${{ steps.meta.outputs.url }}" }
     permissions: { contents: read, id-token: write }
     steps:
@@ -49,8 +49,21 @@ jobs:
           $tag = $env:GITHUB_REF_NAME -like '*-*' ? 'beta' : 'latest'
           bunx npm@11 publish --access public --tag $tag; exit $LASTEXITCODE
 
+  jsr:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: npm
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: { contents: read, id-token: write }
+    steps: [
+      { uses: actions/checkout@v7, with: { persist-credentials: false } },
+      { uses: oven-sh/setup-bun@v2 },
+      { uses: kjanat/runner@master },
+      { run: runner install -f build jsr:publish },
+    ]
+
   gh-release:
-    needs: publish
+    needs: [npm, jsr]
     runs-on: ubuntu-latest
     timeout-minutes: 2
     permissions: { contents: write }

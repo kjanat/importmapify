@@ -24,6 +24,11 @@
 		"json.indentStyle": "tab",
 		"json.lineWidth": 100
 	},
+	"yaml": { "printWidth": 160 },
 	"excludes": ["**/node_modules", "**/*-lock.json", "**/bun.lock", "**/dist", "**/coverage"],
-	"plugins": ["npm:@dprint/biome@0.13.2", "npm:@dprint/markdown@0.22.1"]
+	"plugins": [
+		"npm:@dprint/biome@0.13.2",
+		"npm:@dprint/markdown@0.22.1",
+		"https://plugins.dprint.dev/g-plane/pretty_yaml-v0.6.0.wasm"
+	]
 }
