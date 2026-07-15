@@ -34,16 +34,12 @@ jobs:
     environment: { name: npm, url: "${{ steps.meta.outputs.url }}" }
     steps:
       - { uses: actions/checkout@v7, with: { persist-credentials: false } }
-      - uses: actions/setup-node@v7
-        with: { node-version-file: .node-version, package-manager-cache: false, registry-url: https://registry.npmjs.org }
-      - uses: oven-sh/setup-bun@v2
-      - run: bun install --frozen-lockfile
-      - name: Validate tag
-        id: meta
-        run: |
-          $pkg = Get-Content package.json | ConvertFrom-Json; $version = $pkg.version
-          $url = "https://npm.im/package/{0}/v/{1}" -f $pkg.name, $version; "url=$url" | Add-Content -Path $env:GITHUB_OUTPUT
-          if ($env:GITHUB_REF_NAME -ne "v$version") { "::error file=package.json,line=3,title=Tag mismatch::Tag $env:GITHUB_REF_NAME does not match package version $version"; exit 1 }
+      - { uses: actions/setup-node@v7, with: { node-version-file: .node-version, package-manager-cache: false, registry-url: https://registry.npmjs.org } }
+      - { uses: oven-sh/setup-bun@v2 }
+      - { uses: kjanat/runner@master }
+      - { run: runner install -f }
+      - { run: run -q url:npm | Add-Content -Path $env:GITHUB_OUTPUT, id: meta }
+      - run: $v=jq -r .version package.json;if ($env:GITHUB_REF_NAME -ne "v$v") { "::error file=package.json,line=3,title=Tag mismatch::Tag $env:GITHUB_REF_NAME does not match package version $v"; exit 1 }
       - name: Publish to npm
         env: { NPM_CONFIG_PROVENANCE: "${{ vars.NPM_CONFIG_PROVENANCE }}" }
         run: |
@@ -62,8 +58,8 @@ jobs:
       { uses: oven-sh/setup-bun@v2 },
       { uses: kjanat/runner@master },
       { run: runner install -f build },
-      { run: "$pkg=((jq -r '.[\"version\", \"name\"]' deno.json)-split'`n');$url=\"https://jsr.io/{0}@{1}\"-f $pkg[1], $pkg[0];\"url=$url\" | Add-Content -Path $env:GITHUB_OUTPUT", id: meta },
-      { run: run jsr:publish },
+      { run: run -q url:jsr | Add-Content -Path $env:GITHUB_OUTPUT, id: meta },
+      { run: deno task publish },
     ]
 
   gh-release:

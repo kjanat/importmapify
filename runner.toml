@@ -1,4 +1,14 @@
 #:schema https://kjanat.github.io/runner/schemas/runner.toml.schema.json
 
+[resolution]
+fallback = "probe"
+on_mismatch = "error"
+
+[pm]
+node = "bun"
+
 [install]
 pms = ["bun"]
+
+[github]
+group_output = false

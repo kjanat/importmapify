@@ -1,6 +1,6 @@
 {
 	"name": "importmapify",
-	"version": "0.1.0",
+	"version": "1.0.0",
 	"description": "Expand package.json subpath-pattern imports into explicit Deno import map entries.",
 	"keywords": [
 		"deno",
@@ -58,6 +58,8 @@
 		"test:smoke": "node scripts/smoke.mjs",
 		"test:watch": "bun test --watch",
 		"typecheck": "bunx @typescript/native --noEmit",
+		"url:jsr": "printf 'url=https://jsr.io/%s@%s\n' \"$(jq -r '.name' deno.json)\" \"$(jq -r '.version' deno.json)\"",
+		"url:npm": "printf 'url=https://npm.im/package/%s/v/%s\n' \"$(jq -r '.name' package.json)\" \"$(jq -r '.version' package.json)\"",
 		"volta:bump": "volta pin node@latest npm@11; node --version>.node-version; bun bd"
 	},
 	"dependencies": {
