@@ -49,5 +49,8 @@
 		"url": "git+https://github.com/kjanat/importmapify.git"
 	},
 	"lock": false,
-	"jsrDepsInNodeModules": false
+	"jsrDepsInNodeModules": false,
+	"minimumDependencyAge": {
+		"exclude": ["jsr:@kjanat/*", "npm:@kjanat/*"]
+	}
 }
