@@ -1,11 +1,13 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { expandPattern, isRecord, parsePattern, rebaseTarget, resolveCondition } from '#src/expand';
+import { expandPattern, isRecord, parsePattern, rebaseTarget, resolveCondition } from './expand.ts';
 
 /** A deterministic Deno import map generated from package import entries. */
 interface ImportMapDocument {
 	/** Exact specifier-to-target mappings, sorted by specifier. */
 	readonly imports: Readonly<Record<string, string>>;
+	/** Scope prefixes mapped to sorted, scope-specific import overrides. */
+	readonly scopes?: Readonly<Record<string, Readonly<Record<string, string>>>>;
 }
 
 /** Options for creating an import map without writing it to disk. */
@@ -18,6 +20,8 @@ interface CreateImportMapOptions {
 	readonly conditions?: readonly string[];
 	/** Explicit entries merged after manifest imports, overriding duplicate keys. */
 	readonly additionalImports?: Readonly<Record<string, string>>;
+	/** Scope-specific import overrides keyed by scope prefix. */
+	readonly scopes?: Readonly<Record<string, Readonly<Record<string, string>>>>;
 	/** Directory against which relative targets are rebased. Defaults to {@link root}. */
 	readonly relativeTo?: string;
 }
@@ -72,6 +76,15 @@ function expandManifestImport(
 	return expandPattern(pattern, filesUnder(dir));
 }
 
+function sortEntries(entries: Readonly<Record<string, string>>): Record<string, string> {
+	return Object.fromEntries(Object.entries(entries).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)));
+}
+
+function rebaseScopePrefix(root: string, relativeTo: string, scope: string): string {
+	const rebased = rebaseTarget(root, relativeTo, scope);
+	return scope.endsWith('/') && !rebased.endsWith('/') ? `${rebased}/` : rebased;
+}
+
 /**
  * Expand a package's exact and patterned `imports` into a Deno import map.
  *
@@ -113,8 +126,20 @@ function createImportMap(options: CreateImportMapOptions): ImportMapDocument {
 		imports[key] = rebaseTarget(options.root, relativeTo, value);
 	}
 
-	const sorted = Object.fromEntries(Object.entries(imports).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)));
-	return { imports: sorted };
+	const scopes: Record<string, Readonly<Record<string, string>>> = {};
+	for (const [scope, mappings] of Object.entries(options.scopes ?? {})) {
+		const rebasedMappings: Record<string, string> = {};
+		for (const [key, value] of Object.entries(mappings)) {
+			rebasedMappings[key] = rebaseTarget(options.root, relativeTo, value);
+		}
+		scopes[rebaseScopePrefix(options.root, relativeTo, scope)] = sortEntries(rebasedMappings);
+	}
+
+	const sortedImports = sortEntries(imports);
+	const sortedScopes = Object.fromEntries(Object.entries(scopes).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)));
+	return Object.keys(sortedScopes).length === 0
+		? { imports: sortedImports }
+		: { imports: sortedImports, scopes: sortedScopes };
 }
 
 /**

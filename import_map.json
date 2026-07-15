@@ -1,0 +1,20 @@
+{
+	"imports": {
+		"#deno": "./deno.json",
+		"#pkg": "./package.json",
+		"#src/cli.ts": "./src/cli.ts",
+		"#src/expand.ts": "./src/expand.ts",
+		"#src/map.ts": "./src/map.ts",
+		"#src/mod.ts": "./src/mod.ts",
+		"@types/bun": "npm:bun-types@^1.3.14",
+		"bun": "npm:bun-types@^1.3.14",
+		"bun:test": "npm:bun-types@^1.3.14/test.d.ts",
+		"dreamcli": "jsr:@kjanat/dreamcli@^3.0.0-rc.11",
+		"dreamcli/": "jsr:@kjanat/dreamcli@^3.0.0-rc.11/"
+	},
+	"scopes": {
+		"./tests/": {
+			"dreamcli/testkit": "jsr:@kjanat/dreamcli@^3.0.0-rc.11/testkit"
+		}
+	}
+}

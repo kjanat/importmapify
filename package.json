@@ -27,7 +27,8 @@
 	"type": "module",
 	"imports": {
 		"#pkg": "./package.json",
-		"#src/*": "./src/*.ts"
+		"#deno": "./deno.json",
+		"#src/*": "./src/*"
 	},
 	"exports": {
 		".": {
@@ -36,11 +37,10 @@
 		},
 		"./package.json": "./package.json"
 	},
-	"types": "./dist/index.d.mts",
 	"bin": {
 		"importmapify": "dist/mod.mjs"
 	},
-	"files": ["/dist", "/README.md", "/LICENSE", "/package.json", "/jsr.json"],
+	"files": ["/dist", "/README.md", "/LICENSE", "/package.json", "/deno.json", "/import_map.json"],
 	"scripts": {
 		"bd": "tsdown",
 		"build": "tsdown",
@@ -50,14 +50,15 @@
 		"fmt": "biome check --fix 2>/dev/null; dprint fmt",
 		"jsr:publish": "bunx jsr publish --allow-dirty",
 		"lint": "biome lint",
-		"prepack": "bun --bun bd -l error",
+		"prepack": "bun --bun bd -l error && bun scripts/generate-importmap.ts",
 		"prepublishOnly": "[ -n \"${GITHUB_ACTIONS:-}\" ] || { printf '%s\\n' 'manual npm publish blocked; use release workflow for provenance' >&2; exit 1; }",
 		"runbin": "node \"$(jq -r '.bin.[]' package.json)\"",
 		"test": "bun test --coverage",
 		"test:coverage": "bun test --coverage",
 		"test:smoke": "node scripts/smoke.mjs",
 		"test:watch": "bun test --watch",
-		"typecheck": "bunx @typescript/native --noEmit"
+		"typecheck": "bunx @typescript/native --noEmit",
+		"volta:bump": "volta pin node@latest npm@11; node --version>.node-version; bun bd"
 	},
 	"dependencies": {
 		"dreamcli": "npm:@kjanat/dreamcli@^3.0.0-rc.11"
@@ -65,6 +66,7 @@
 	"devDependencies": {
 		"@arethetypeswrong/core": "^0.18.5",
 		"@types/bun": "^1.3.14",
+		"@types/deno": "^2.7.0",
 		"@types/node": "^26.1.1",
 		"@typescript/native": "npm:typescript@^7",
 		"biome": "npm:@biomejs/biome@^2.5.4",

@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { which } from 'bun';
-import { writeImportMap } from '#src/map';
+import { writeImportMap } from '#src/map.ts';
 
 const denoPath = which('deno');
 
@@ -35,6 +35,34 @@ describe.skipIf(denoPath === null)('generated import map under real Deno', () =>
 				encoding: 'utf8',
 			});
 			expect(stdout).toBe('hello deno\n');
+		} finally {
+			fs.rmSync(root, { recursive: true, force: true });
+		}
+	});
+
+	it('resolves a scoped override for modules under the scope prefix', () => {
+		const root = fs.mkdtempSync(path.join(os.tmpdir(), 'importmapify-deno-scope-'));
+		try {
+			fs.mkdirSync(path.join(root, 'shared'), { recursive: true });
+			fs.mkdirSync(path.join(root, 'tests'), { recursive: true });
+			fs.writeFileSync(path.join(root, 'shared/default.ts'), "export default 'default';\n");
+			fs.writeFileSync(path.join(root, 'shared/scoped.ts'), "export default 'scoped';\n");
+			fs.writeFileSync(path.join(root, 'tests/main.ts'), "import value from 'logger';\nconsole.log(value);\n");
+			fs.writeFileSync(path.join(root, 'package.json'), JSON.stringify({ imports: {} }));
+
+			const out = writeImportMap({
+				root,
+				out: 'deno.import_map.json',
+				additionalImports: { logger: './shared/default.ts' },
+				scopes: { './tests/': { logger: './shared/scoped.ts' } },
+			});
+
+			if (denoPath === null) throw new Error('deno not found');
+			const stdout = execFileSync(denoPath, ['run', `--import-map=${out}`, 'tests/main.ts'], {
+				cwd: root,
+				encoding: 'utf8',
+			});
+			expect(stdout).toBe('scoped\n');
 		} finally {
 			fs.rmSync(root, { recursive: true, force: true });
 		}

@@ -13,3 +13,4 @@ pnpm-lock.yaml
 yarn.lock
 deno.import_map.json
 jsr.json
+deno.lock

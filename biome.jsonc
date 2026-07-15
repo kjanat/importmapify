@@ -22,6 +22,9 @@
 		},
 		"rules": {
 			"preset": "all",
+			"complexity": {
+				"useLiteralKeys": "off"
+			},
 			"correctness": {
 				"noNodejsModules": "off",
 				"noUnresolvedImports": "off",

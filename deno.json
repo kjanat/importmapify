@@ -1,0 +1,46 @@
+{
+	"$schema": "https://raw.githubusercontent.com/denoland/deno/refs/heads/main/cli/schemas/config-file.v1.json",
+	"name": "@kjanat/importmapify",
+	"version": "0.1.0",
+	"exports": "./src/mod.ts",
+	"publish": {
+		"include": [
+			"./src/**/*.ts",
+			"./README.md",
+			"./LICENSE",
+			"./deno.json",
+			"./import_map.json",
+			"./package.json"
+		]
+	},
+	"compilerOptions": {
+		"lib": ["ESNext", "DOM", "deno.ns"]
+	},
+	"importMap": "./import_map.json",
+	"license": "MIT",
+	"tasks": {
+		"build": {
+			"description": "build for npm distribution",
+			"command": "bunx tsdown",
+			"files": ["src/**", "package.json", "bun.lock"],
+			"output": ["dist/**", "deno.json"]
+		},
+		"publish": {
+			"command": "deno publish --config deno.json --allow-dirty",
+			"description": "Publish package to jsr",
+			"dependencies": ["importmapify"]
+		},
+		"importmapify": {
+			"description": "generate importmap for deno",
+			"command": "deno run --no-config -A scripts/generate-importmap.ts",
+			"files": ["package.json", "scripts/generate-importmap.ts", "src/**"],
+			"output": ["import_map.json"]
+		}
+	},
+	"preferPackageJson": false,
+	"homepage": "https://github.com/kjanat/importmapify#readme",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/kjanat/importmapify.git"
+	}
+}

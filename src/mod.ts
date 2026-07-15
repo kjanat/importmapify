@@ -16,25 +16,15 @@
  * @module importmapify
  */
 import { cli as dreamcli } from 'dreamcli';
-import { generateCommand } from '#src/cli';
-
-declare global {
-	/** Runtime metadata for the current ECMAScript module. */
-	interface ImportMeta {
-		/** Whether this module is the process entrypoint. */
-		main: boolean;
-		/** Fully qualified URL of this module. */
-		url: string;
-	}
-}
+import { generateCommand } from './cli.ts';
 
 const cli = dreamcli('importmapify')
-	.manifest({ from: import.meta.url, files: ['package.json', 'jsr.json'] })
+	.manifest({ from: import.meta.url, files: ['package.json', 'deno.json'] })
 	.links()
 	.default(generateCommand)
 	.completions({ as: 'flag' });
 
 if (import.meta.main) cli.run();
 
-export type { CreateImportMapOptions, ImportMapDocument, WriteImportMapOptions } from '#src/map';
-export { createImportMap, formatImportMap, writeImportMap } from '#src/map';
+export type { CreateImportMapOptions, ImportMapDocument, WriteImportMapOptions } from './map.ts';
+export { createImportMap, formatImportMap, writeImportMap } from './map.ts';

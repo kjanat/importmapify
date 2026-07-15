@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { expandPattern, isRebasableTarget, parsePattern, rebaseTarget, resolveCondition } from '#src/expand';
+import { expandPattern, isRebasableTarget, parsePattern, rebaseTarget, resolveCondition } from '#src/expand.ts';
 
 const PATTERN_MISMATCH = /both sides must contain/;
 

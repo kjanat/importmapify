@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'bun:test';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { createImportMap, formatImportMap, writeImportMap } from '#src/map';
+import { createImportMap, formatImportMap, writeImportMap } from '#src/map.ts';
 
 const roots: string[] = [];
 const PATTERN_MISMATCH = /both sides must contain/;
@@ -119,6 +119,31 @@ describe('createImportMap', () => {
 		});
 	});
 
+	it('adds deterministically sorted scoped imports', () => {
+		const root = fixture({});
+		expect(
+			createImportMap({
+				root,
+				scopes: {
+					'./tests/': {
+						zeta: 'jsr:@scope/zeta',
+						alpha: './tests/alpha.ts',
+					},
+					'./src/': { logger: './src/logger.ts' },
+				},
+			}),
+		).toEqual({
+			imports: {},
+			scopes: {
+				'./src/': { logger: './src/logger.ts' },
+				'./tests/': {
+					alpha: './tests/alpha.ts',
+					zeta: 'jsr:@scope/zeta',
+				},
+			},
+		});
+	});
+
 	it('rebases relative targets against relativeTo', () => {
 		const root = fixture({ '#config': './src/config.ts' }, ['src/config.ts']);
 		expect(createImportMap({ root, relativeTo: path.join(root, '.cache/maps') })).toEqual({
@@ -172,6 +197,19 @@ describe('writeImportMap', () => {
 		const out = writeImportMap({ root, out: 'deno.import_map.json' });
 		expect(JSON.parse(fs.readFileSync(out, 'utf8'))).toEqual({
 			imports: { '#config': './src/config.ts' },
+		});
+	});
+
+	it('rebases scope prefixes and targets for a nested output', () => {
+		const root = fixture({});
+		const out = writeImportMap({
+			root,
+			out: '.cache/maps/deno.import_map.json',
+			scopes: { './tests/': { logger: './tests/logger.ts' } },
+		});
+		expect(JSON.parse(fs.readFileSync(out, 'utf8'))).toEqual({
+			imports: {},
+			scopes: { '../../tests/': { logger: '../../tests/logger.ts' } },
 		});
 	});
 });

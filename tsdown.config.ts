@@ -1,11 +1,11 @@
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs/promises';
+import { URL } from 'node:url';
 import { sortPackageJson } from 'sort-package-json';
 import { defineConfig } from 'tsdown';
 import pkg from './package.json' with { type: 'json' };
 
 const JS_EXTENSION_PATTERN = /\.([cm]?)js$/;
-const JSR_SCHEMA = 'https://jsr.io/schema/config-file.v1.json';
 const JSR_SCOPE = '@kjanat';
 
 export default defineConfig({
@@ -50,19 +50,35 @@ export default defineConfig({
 			execFileSync('npm', ['pkg', 'fix'], { stdio: 'inherit' });
 			execFileSync('dprint', ['fmt', 'package.json'], { stdio: 'inherit' });
 
-			const jsr = {
-				$schema: JSR_SCHEMA,
+			const denoPath = new URL('./deno.json', import.meta.url);
+			const denoConfig: unknown = JSON.parse(await fs.readFile(denoPath, { encoding: 'utf8' }));
+			if (typeof denoConfig !== 'object' || denoConfig === null || Array.isArray(denoConfig)) {
+				throw new TypeError('deno.json must contain an object');
+			}
+			const deno = {
+				...denoConfig,
 				name: pkg.name.startsWith('@') ? pkg.name : `${JSR_SCOPE}/${pkg.name}`,
 				version: pkg.version,
 				exports: './src/mod.ts',
-				publish: { include: ['./src/**/*.ts', './README.md', './LICENSE', './jsr.json', './package.json'] },
+				publish: {
+					include: [
+						'./src/**/*.ts',
+						'./README.md',
+						'./LICENSE',
+						'./deno.json',
+						'./import_map.json',
+						'./package.json',
+					],
+				},
+				compilerOptions: { lib: ['ESNext', 'DOM', 'deno.ns'] },
 				homepage: pkg.homepage,
 				repository: pkg.repository,
 				license: pkg.license,
 			};
-			await fs.writeFile(new URL('./jsr.json', import.meta.url), `${JSON.stringify(jsr, null, '\t')}\n`, {
+			await fs.writeFile(denoPath, `${JSON.stringify(deno, null, '\t')}\n`, {
 				encoding: 'utf8',
 			});
+			execFileSync('dprint', ['fmt', 'deno.json'], { stdio: 'inherit' });
 		},
 	},
 });

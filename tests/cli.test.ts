@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { runCommand } from 'dreamcli/testkit';
-import { generateCommand } from '#src/cli';
+import { generateCommand } from '#src/cli.ts';
 
 const roots: string[] = [];
 
@@ -24,6 +24,15 @@ function fixture(imports: Readonly<Record<string, unknown>>, files: readonly str
 }
 
 describe('generateCommand', () => {
+	it('shows generation, scope, and freshness examples in help', async () => {
+		const result = await runCommand(generateCommand, ['--help']);
+		const help = result.stdout.join('\n');
+		expect(help).toContain('Examples:');
+		expect(help).toContain('importmapify --stdout');
+		expect(help).toContain("--scope './tests/::dreamcli/testkit=");
+		expect(help).toContain('importmapify --check');
+	});
+
 	it('writes the import map and reports the written path', async () => {
 		const root = fixture({ '#config': './src/config.ts' }, ['src/config.ts']);
 		const result = await runCommand(generateCommand, ['--root', root]);
@@ -66,9 +75,40 @@ describe('generateCommand', () => {
 		});
 	});
 
+	it('accepts repeated --scope prefix::key=value flags', async () => {
+		const root = fixture({});
+		const result = await runCommand(generateCommand, [
+			'--root',
+			root,
+			'--stdout',
+			'--scope',
+			'./tests/::dreamcli/testkit=jsr:@kjanat/dreamcli/old-testkit',
+			'--scope',
+			'./tests/::virtual=https://example.com/mod.ts?value=a=b',
+			'--scope',
+			'./tests/::dreamcli/testkit=jsr:@kjanat/dreamcli/testkit',
+		]);
+
+		expect(JSON.parse(result.stdout.join(''))).toEqual({
+			imports: {},
+			scopes: {
+				'./tests/': {
+					'dreamcli/testkit': 'jsr:@kjanat/dreamcli/testkit',
+					virtual: 'https://example.com/mod.ts?value=a=b',
+				},
+			},
+		});
+	});
+
 	it('rejects an --import value with no "="', async () => {
 		const root = fixture({});
 		const result = await runCommand(generateCommand, ['--root', root, '--stdout', '--import', 'nokeyvalue']);
+		expect(result.exitCode).not.toBe(0);
+	});
+
+	it('rejects a --scope value with no prefix separator', async () => {
+		const root = fixture({});
+		const result = await runCommand(generateCommand, ['--root', root, '--scope', 'tests=logger=value']);
 		expect(result.exitCode).not.toBe(0);
 	});
 

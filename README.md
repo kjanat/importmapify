@@ -1,6 +1,7 @@
 # importmapify
 
 [![NPM](https://img.shields.io/npm/v/importmapify?logo=npm&labelColor=CB3837&color=black)][npm]
+[![JSR](https://img.shields.io/jsr/v/@kjanat/importmapify?logoColor=083344&logo=jsr&logoSize=auto&label=&labelColor=f7df1e&color=black)][jsr]
 [![CI](https://github.com/kjanat/importmapify/actions/workflows/publish.yml/badge.svg)][ci]
 [![Socket](https://badge.socket.dev/npm/package/importmapify)][socket]
 
@@ -13,6 +14,7 @@ per matched source file instead. This package performs that expansion and writes
 [Deno import map]: https://docs.deno.com/runtime/fundamentals/modules/#differentiating-between-imports-or-importmap-in-deno.json-and---import-map-option
 [ci]: https://github.com/kjanat/importmapify/actions/workflows/publish.yml
 [npm]: https://npm.im/importmapify
+[jsr]: https://jsr.io/@kjanat/importmapify
 [socket]: https://socket.dev/npm/package/importmapify
 
 ## Install
@@ -27,15 +29,16 @@ npm install importmapify
 npx importmapify --root . --out deno.import_map.json
 ```
 
-| Flag                 | Alias | Meaning                                                           | Default                |
-| -------------------- | ----- | ----------------------------------------------------------------- | ---------------------- |
-| `--root`             | `-r`  | Project root containing the manifest                              | current directory      |
-| `--manifest`         | `-m`  | Manifest path, relative to root                                   | `package.json`         |
-| `--out`              | `-o`  | Output path, relative to root                                     | `deno.import_map.json` |
-| `--import key=value` | `-i`  | Extra import entry; repeatable                                    | none                   |
-| `--condition name`   | `-c`  | Condition tried when a target is a conditional object; repeatable | `import`, `default`    |
-| `--check`            |       | Exit 1 if the output file is stale, without writing it            | off                    |
-| `--stdout`           |       | Print the map instead of writing it                               | off                    |
+| Flag                        | Alias | Meaning                                                           | Default                |
+| --------------------------- | ----- | ----------------------------------------------------------------- | ---------------------- |
+| `--root`                    | `-r`  | Project root containing the manifest                              | current directory      |
+| `--manifest`                | `-m`  | Manifest path, relative to root                                   | `package.json`         |
+| `--out`                     | `-o`  | Output path, relative to root                                     | `deno.import_map.json` |
+| `--import key=value`        | `-i`  | Extra import entry; repeatable                                    | none                   |
+| `--scope prefix::key=value` | `-s`  | Scoped import override; repeatable                                | none                   |
+| `--condition name`          | `-c`  | Condition tried when a target is a conditional object; repeatable | `import`, `default`    |
+| `--check`                   |       | Exit 1 if the output file is stale, without writing it            | off                    |
+| `--stdout`                  |       | Print the map instead of writing it                               | off                    |
 
 Run `npx importmapify --help` for the full reference, or `npx importmapify --completions bash` for shell completions.
 
@@ -49,6 +52,11 @@ const out = writeImportMap({
   out: 'deno.import_map.json',
   additionalImports: {
     'bun:test': './node_modules/bun-types/test.d.ts',
+  },
+  scopes: {
+    './tests/': {
+      'dreamcli/testkit': 'jsr:@kjanat/dreamcli@^3/testkit',
+    },
   },
 });
 ```
@@ -67,6 +75,7 @@ const out = writeImportMap({
 | `manifest`          | Manifest path, relative to `root`.                                                                | `package.json`          |
 | `conditions`        | Condition names tried, in order, against conditional targets (`{"import": ..., "default": ...}`). | `['import', 'default']` |
 | `additionalImports` | Extra entries merged in after manifest expansion; these win on key collision.                     | none                    |
+| `scopes`            | Scope prefixes mapped to scope-specific import overrides.                                         | none                    |
 | `relativeTo`        | Directory the written targets are rebased against.                                                | `root`                  |
 
 `WriteImportMapOptions` extends the above with `out`, the output path relative to `root`. `writeImportMap` rebases
@@ -124,7 +133,8 @@ real filename: `#lib/bytes.js` and `#lib/bytes.ts`, both pointing at `./src/lib/
 - Relative targets (`./...`, `../...`) are rebased against `relativeTo`. Bare specifiers, `npm:`/`jsr:`/`node:`
   specifiers, and absolute URLs pass through unchanged.
 - If exact and expanded entries produce the same key, the later manifest entry wins.
-- Output entries are sorted by UTF-16 code unit for stable diffs.
+- Relative scope prefixes and targets are rebased against `relativeTo`; trailing scope slashes are preserved.
+- Import entries, scope prefixes, and scoped entries are sorted by UTF-16 code unit for stable diffs.
 
 ## Use the generated map
 

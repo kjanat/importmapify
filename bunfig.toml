@@ -1,2 +1,12 @@
 [run]
 silent = true
+
+[install]
+linker = "hoisted"
+registry = "https://registry.npmjs.org"
+
+[install.scopes]
+"@jsr" = "https://npm.jsr.io"
+
+[install.cache]
+disable = true

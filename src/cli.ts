@@ -3,7 +3,7 @@ import { dirname, join } from 'node:path';
 import { cwd } from 'node:process';
 import type { AnyCommandBuilder } from 'dreamcli';
 import { CLIError, command, flag } from 'dreamcli';
-import { createImportMap, formatImportMap, writeImportMap } from '#src/map';
+import { createImportMap, formatImportMap, writeImportMap } from './map.ts';
 
 function parseKeyValue(raw: string): readonly [string, string] {
 	const eq = raw.indexOf('=');
@@ -14,6 +14,18 @@ function parseKeyValue(raw: string): readonly [string, string] {
 		});
 	}
 	return [raw.slice(0, eq), raw.slice(eq + 1)];
+}
+
+function parseScope(raw: string): readonly [string, string, string] {
+	const separator = raw.indexOf('::');
+	const eq = raw.indexOf('=', separator + 2);
+	if (separator <= 0 || eq <= separator + 2 || eq === raw.length - 1) {
+		throw new CLIError(`--scope expects prefix::key=value, got "${raw}"`, {
+			code: 'invalid-scope-flag',
+			exitCode: 2,
+		});
+	}
+	return [raw.slice(0, separator), raw.slice(separator + 2, eq), raw.slice(eq + 1)];
 }
 
 /** DreamCLI command that writes, checks, or prints an expanded Deno import map. */
@@ -33,6 +45,7 @@ export const generateCommand: AnyCommandBuilder = command('generate')
 		'import',
 		flag.array(flag.string()).describe('Additional import entry as key=value. Repeatable.').alias('i'),
 	)
+	.flag('scope', flag.array(flag.string()).describe('Scoped import as prefix::key=value. Repeatable.').alias('s'))
 	.flag(
 		'condition',
 		flag
@@ -42,9 +55,15 @@ export const generateCommand: AnyCommandBuilder = command('generate')
 	)
 	.flag('check', flag.boolean().describe('Exit 1 if the output file is stale instead of writing it.'))
 	.flag('stdout', flag.boolean().describe('Print the import map to stdout instead of writing it.'))
+	.example('importmapify --stdout', 'Print the generated import map')
+	.example(
+		`importmapify --import 'dreamcli=jsr:@kjanat/dreamcli@^3' --scope './tests/::dreamcli/testkit=jsr:@kjanat/dreamcli@^3/testkit'`,
+		'Add global and test-scoped dependencies',
+	)
+	.example('importmapify --check', 'Fail when the generated file is stale')
 	.action(({ flags, out }) => {
 		const { log, error, setExitCode } = out;
-		const { check, stdout, root, manifest, condition: cdts, out: of, import: imf } = flags;
+		const { check, stdout, root, manifest, condition: cdts, out: of, import: imf, scope: scf } = flags;
 
 		if (check && stdout) {
 			throw new CLIError('--check and --stdout are mutually exclusive', {
@@ -56,7 +75,14 @@ export const generateCommand: AnyCommandBuilder = command('generate')
 		const outPath = join(root, of);
 		const relativeTo = dirname(outPath);
 		const additionalImports = Object.fromEntries((imf ?? []).map(parseKeyValue));
-		const options = { root, manifest, conditions: cdts, additionalImports, relativeTo };
+		const scopes: Record<string, Record<string, string>> = {};
+		for (const raw of scf ?? []) {
+			const [scope, key, value] = parseScope(raw);
+			const mappings = scopes[scope];
+			if (mappings === undefined) scopes[scope] = { [key]: value };
+			else mappings[key] = value;
+		}
+		const options = { root, manifest, conditions: cdts, additionalImports, scopes, relativeTo };
 
 		if (stdout) {
 			log(formatImportMap(createImportMap(options)));

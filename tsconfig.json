@@ -4,7 +4,7 @@
 		"target": "ESNext",
 		"module": "esnext",
 		"moduleResolution": "bundler",
-		"lib": ["ESNext"],
+		"lib": ["ESNext", "DOM"],
 		"strict": true,
 		"noUncheckedIndexedAccess": true,
 		"exactOptionalPropertyTypes": true,
@@ -18,7 +18,10 @@
 		"noEmit": true,
 		"isolatedDeclarations": true,
 		"stripInternal": true,
-		"types": ["*"]
+		"types": ["bun", "deno"],
+		"paths": {
+			"#src/*": ["./src/*"]
+		}
 	},
 	"include": ["./src/**/*.ts", "./tests/**/*.ts"],
 	"exclude": ["./dist", "./node_modules"]

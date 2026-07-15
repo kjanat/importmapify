@@ -11,6 +11,7 @@ on:
 
 permissions: { contents: read }
 defaults: { run: { shell: pwsh } }
+env: { DENO_NO_PACKAGE_JSON: 1 }
 
 jobs:
   test:
@@ -29,8 +30,8 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    environment: { name: npm, url: "${{ steps.meta.outputs.url }}" }
     permissions: { contents: read, id-token: write }
+    environment: { name: npm, url: "${{ steps.meta.outputs.url }}" }
     steps:
       - { uses: actions/checkout@v7, with: { persist-credentials: false } }
       - uses: actions/setup-node@v7
@@ -55,11 +56,14 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions: { contents: read, id-token: write }
+    environment: { name: jsr, url: "${{ steps.meta.outputs.url }}" }
     steps: [
       { uses: actions/checkout@v7, with: { persist-credentials: false } },
       { uses: oven-sh/setup-bun@v2 },
       { uses: kjanat/runner@master },
-      { run: runner install -f build jsr:publish },
+      { run: runner install -f build },
+      { run: "$pkg=((jq -r '.[\"version\", \"name\"]' deno.json)-split'`n');$url=\"https://jsr.io/{0}@{1}\"-f $pkg[1], $pkg[0];\"url=$url\" | Add-Content -Path $env:GITHUB_OUTPUT", id: meta },
+      { run: run jsr:publish },
     ]
 
   gh-release:

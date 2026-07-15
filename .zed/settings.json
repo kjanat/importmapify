@@ -33,7 +33,7 @@
 				{ "language_server": { "name": "dprint" } },
 				{
 					"external": {
-						"command": "bunx",
+						"command": "bun",
 						"arguments": ["dprint", "fmt", "--stdin", "{buffer_path}"]
 					}
 				}
@@ -42,13 +42,20 @@
 				"source.fixAll.biome": true,
 				"source.organizeImports.biome": true
 			},
-			"language_servers": ["typescript", "biome", "oxlint"]
+			"language_servers": ["typescript", "deno", "biome", "oxlint"]
 		},
 		"Markdown": { "wrap_guides": [120] }
 	},
 	"lsp": {
-		"dprint": {
-			"binary": { "path": "bunx", "arguments": ["dprint", "lsp"] }
+		"dprint": { "binary": { "path": "bunx", "arguments": ["dprint", "lsp"] } },
+		"deno": {
+			"settings": {
+				"deno": {
+					"enable": true,
+					"importMap": "./import_map.json",
+					"config": "./deno.json"
+				}
+			}
 		}
 	}
 }
