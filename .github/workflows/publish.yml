@@ -33,7 +33,8 @@ jobs:
     permissions: { contents: write, id-token: write }
     steps:
       - { uses: actions/checkout@v7, with: { persist-credentials: false } }
-      - { uses: actions/setup-node@v7, with: { node-version-file: .node-version, package-manager-cache: false } }
+      - uses: actions/setup-node@v7
+        with: { node-version-file: .node-version, package-manager-cache: false, registry-url: https://registry.npmjs.org }
       - uses: oven-sh/setup-bun@v2
       - run: bun install --frozen-lockfile
       - name: Validate tag
@@ -43,7 +44,9 @@ jobs:
           $url = "https://npm.im/package/{0}/v/{1}" -f $pkg.name, $version; "url=$url" | Add-Content -Path $env:GITHUB_OUTPUT
           if ($env:GITHUB_REF_NAME -ne "v$version") { "::error file=package.json,line=3,title=Tag mismatch::Tag $env:GITHUB_REF_NAME does not match package version $version"; exit 1 }
       - name: Publish to npm
-        env: { NPM_CONFIG_PROVENANCE: "${{ vars.NPM_CONFIG_PROVENANCE || 'true' }}" }
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: ${{ vars.NPM_CONFIG_PROVENANCE }}
         run: |
           $tag = $env:GITHUB_REF_NAME -like '*-*' ? 'beta' : 'latest'
           bunx npm@11 publish --access public --tag $tag; exit $LASTEXITCODE
