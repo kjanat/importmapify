@@ -52,6 +52,19 @@ describe('createImportMap', () => {
 		});
 	});
 
+	it('expands a pattern with a static filename prefix', () => {
+		const root = fixture({ '#lib/*': './src/prefix-*.ts' }, [
+			'src/prefix-bytes.ts',
+			'src/ignored.ts',
+		]);
+		expect(createImportMap({ root })).toEqual({
+			imports: {
+				'#lib/bytes': './src/prefix-bytes.ts',
+				'#lib/prefix-bytes.ts': './src/prefix-bytes.ts',
+			},
+		});
+	});
+
 	it('resolves a conditional target using the default condition order', () => {
 		const root = fixture(
 			{ '#config': { types: './config.d.ts', import: './config.ts', default: './config.js' } },

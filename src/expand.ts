@@ -3,8 +3,25 @@ import path from 'node:path';
 export interface Pattern {
 	readonly keyPrefix: string;
 	readonly keySuffix: string;
+	readonly targetDirectory: string;
 	readonly targetPrefix: string;
 	readonly targetSuffix: string;
+}
+
+function escapeRegExp(value: string): string {
+	return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function targetMatcher(pattern: Pattern): RegExp {
+	const suffixParts = pattern.targetSuffix.split('*');
+	const firstSuffix = suffixParts[0] ?? '';
+	const repeatedSuffixes = suffixParts
+		.slice(1)
+		.map((suffix) => `\\k<wildcard>${escapeRegExp(suffix)}`)
+		.join('');
+	return new RegExp(
+		`^${escapeRegExp(pattern.targetPrefix)}(?<wildcard>.*)${escapeRegExp(firstSuffix)}${repeatedSuffixes}$`,
+	);
 }
 
 export function parsePattern(key: string, target: string): Pattern | undefined {
@@ -16,22 +33,29 @@ export function parsePattern(key: string, target: string): Pattern | undefined {
 			`Import pattern mismatch: "${key}" -> "${target}"; both sides must contain "*", or neither should.`,
 		);
 	}
+	const targetPrefix = target.slice(0, targetStar);
+	const targetDirectory = targetPrefix.endsWith('/')
+		? targetPrefix.slice(0, -1)
+		: path.posix.dirname(targetPrefix);
 	return {
 		keyPrefix: key.slice(0, keyStar),
 		keySuffix: key.slice(keyStar + 1),
-		targetPrefix: target.slice(0, targetStar),
+		targetDirectory: targetDirectory === '' ? '.' : targetDirectory,
+		targetPrefix,
 		targetSuffix: target.slice(targetStar + 1),
 	};
 }
 
 export function expandPattern(pattern: Pattern, files: readonly string[]): Record<string, string> {
 	const imports: Record<string, string> = {};
+	const matcher = targetMatcher(pattern);
+	const targetBase = pattern.targetDirectory === '.' ? './' : `${pattern.targetDirectory}/`;
 	for (const file of files) {
-		if (!file.endsWith(pattern.targetSuffix)) continue;
-		const star = file.slice(0, file.length - pattern.targetSuffix.length);
-		const resolved = `${pattern.targetPrefix}${file}`;
-		imports[`${pattern.keyPrefix}${star}${pattern.keySuffix}`] = resolved;
-		imports[`${pattern.keyPrefix}${file}`] = resolved;
+		const target = `${targetBase}${file}`;
+		const wildcard = matcher.exec(target)?.groups?.wildcard;
+		if (wildcard === undefined) continue;
+		imports[`${pattern.keyPrefix}${wildcard}${pattern.keySuffix}`] = target;
+		imports[`${pattern.keyPrefix}${file}`] = target;
 	}
 	return imports;
 }

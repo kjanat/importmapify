@@ -1,7 +1,7 @@
-import type { AnyCommandBuilder } from 'dreamcli';
-import { CLIError, command, flag } from 'dreamcli';
 import fs from 'node:fs';
 import path from 'node:path';
+import type { AnyCommandBuilder } from 'dreamcli';
+import { CLIError, command, flag } from 'dreamcli';
 import { createImportMap, formatImportMap, writeImportMap } from './import-map.ts';
 
 function parseKeyValue(raw: string): readonly [string, string] {

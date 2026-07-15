@@ -16,6 +16,7 @@ describe('parsePattern', () => {
 		expect(parsePattern('#lib/*', './src/lib/*.ts')).toEqual({
 			keyPrefix: '#lib/',
 			keySuffix: '',
+			targetDirectory: './src/lib',
 			targetPrefix: './src/lib/',
 			targetSuffix: '.ts',
 		});
@@ -55,6 +56,26 @@ describe('expandPattern', () => {
 		const pattern = parsePattern('#lib/*', './src/lib/*.ts');
 		if (pattern === undefined) throw new Error('expected a pattern');
 		expect(expandPattern(pattern, ['ignored.js'])).toEqual({});
+	});
+
+	it('matches static text around a target wildcard', () => {
+		const pattern = parsePattern('#lib/*', './src/prefix-*.ts');
+		if (pattern === undefined) throw new Error('expected a pattern');
+		expect(expandPattern(pattern, ['prefix-bytes.ts', 'ignored.ts'])).toEqual({
+			'#lib/bytes': './src/prefix-bytes.ts',
+			'#lib/prefix-bytes.ts': './src/prefix-bytes.ts',
+		});
+	});
+
+	it('replaces repeated target wildcards with the same capture', () => {
+		const pattern = parsePattern('#copy/*', './src/*/copy-*.ts');
+		if (pattern === undefined) throw new Error('expected a pattern');
+		expect(expandPattern(pattern, ['a/copy-a.ts', 'a/copy-b.ts', 'b/copy-b.ts'])).toEqual({
+			'#copy/a': './src/a/copy-a.ts',
+			'#copy/a/copy-a.ts': './src/a/copy-a.ts',
+			'#copy/b': './src/b/copy-b.ts',
+			'#copy/b/copy-b.ts': './src/b/copy-b.ts',
+		});
 	});
 });
 

@@ -70,7 +70,7 @@ export function createImportMap(options: CreateImportMapOptions): ImportMapDocum
 			continue;
 		}
 
-		const dir = path.join(options.root, pattern.targetPrefix);
+		const dir = path.join(options.root, pattern.targetDirectory);
 		for (const [specifier, target] of Object.entries(expandPattern(pattern, filesUnder(dir)))) {
 			setImport(specifier, target);
 		}

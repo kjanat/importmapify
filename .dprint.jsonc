@@ -19,7 +19,7 @@
 		"jsonTrailingCommaFiles": ["!biome.jsonc", "**/tsconfig*.json"]
 	},
 	"markdown": { "textWrap": "always", "associations": ["!*.md"] },
-	"prettier": { "useTabs": false, "associations": ["*.md"], "singleQuote": true },
+	"prettier": { "useTabs": false, "associations": ["!**/*", "*.md"], "singleQuote": true },
 	"biome": {
 		"lineEnding": "lf",
 		"indentWidth": 2,

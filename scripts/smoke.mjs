@@ -1,7 +1,8 @@
+#!/usr/bin/env node
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import pkg from '../package.json' with { type: 'json' };
+import pkg from '#pkg' with { type: 'json' };
 
 const pkgUrl = new URL('../package.json', import.meta.url);
 const { writeImportMap } = await import(new URL(pkg.exports['.'].default, pkgUrl).href);

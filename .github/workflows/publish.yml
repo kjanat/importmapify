@@ -1,135 +1,55 @@
-name: Publish
+name: CI
+run-name: >-
+  ${{ github.event_name == 'pull_request'
+  && format('PR #{0}: {1}', github.event.pull_request.number, github.event.pull_request.title)
+  || startsWith(github.ref, 'refs/tags/') && format('Release {0}', github.ref_name)
+  || format('CI {0}', github.ref_name) }}
 
 on:
-  push: { tags: ['v*.*.*'] }
+  push: { branches: [master], tags: ["v*.*.*"] }
   pull_request: { branches: [master] }
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
-
 permissions: { contents: read }
+defaults: { run: { shell: pwsh } }
 
 jobs:
   test:
-    name: Test
-    uses: ./.github/workflows/test.yml
-    permissions: { contents: read, id-token: write }
-
-  validate:
-    name: Validate version
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    permissions: { contents: read }
-    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
-    outputs:
-      version: ${{ steps.version.outputs.version }}
-      npm_url: ${{ steps.version.outputs.npm_url }}
-      is_tag: ${{ steps.version.outputs.is_tag }}
-      prerelease: ${{ steps.version.outputs.prerelease }}
-      is_stable: ${{ steps.version.outputs.is_stable }}
-      mode: ${{ steps.version.outputs.mode }}
-    steps:
-      - uses: actions/checkout@v7
-        with: { persist-credentials: false }
-      - uses: ./.github/actions/release-validate
-        id: version
-        with: { event-name: '${{ github.event_name }}', ref-name: '${{ github.ref_name }}' }
-
-  publish-npm:
-    name: npm (${{ needs.validate.outputs.mode }})
-    needs: [test, validate]
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    permissions: { contents: read, id-token: write }
-    environment:
-      name: ${{ needs.validate.outputs.is_tag == 'true' && 'npm' || '' }}
-      url: ${{ needs.validate.outputs.is_tag == 'true' && needs.validate.outputs.npm_url || '' }}
     steps:
-      - uses: actions/checkout@v7
-        with: { persist-credentials: false }
-      - uses: ./.github/actions/setup-ts
-        with:
-          {
-            install-bun: true,
-            install-node: true,
-            update-npm: true,
-            node-registry-url: https://registry.npmjs.org,
-          }
+      - { uses: actions/checkout@v7, with: { persist-credentials: false } }
+      - { uses: actions/setup-node@v7, with: { node-version-file: .node-version, package-manager-cache: false } }
+      - uses: oven-sh/setup-bun@v2
+      - uses: kjanat/runner@master
+      - run: runner install -f build typecheck check test:coverage test:smoke
+      - run: node --run runbin --help
+
+  publish:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: { name: npm, url: "${{ steps.meta.outputs.url }}" }
+    permissions: { contents: write, id-token: write }
+    steps:
+      - { uses: actions/checkout@v7, with: { persist-credentials: false } }
+      - { uses: actions/setup-node@v7, with: { node-version-file: .node-version, package-manager-cache: false } }
+      - uses: oven-sh/setup-bun@v2
       - run: bun install --frozen-lockfile
-      - run: bun run build
-      - shell: pwsh
-        env: { OUTPUTS: '${{ toJSON(needs.validate.outputs) }}' }
+      - name: Validate tag
+        id: meta
         run: |
-          $outputs = ConvertFrom-Json $env:OUTPUTS
-          $pkg = Get-Content package.json | ConvertFrom-Json
-          $versionsJson = bun info $pkg.name versions --json 2>$null
-          $versions = if ($LASTEXITCODE -eq 0) { $versionsJson | ConvertFrom-Json } else { @() }
-
-          if ($versions -contains $pkg.version) { "::notice::{0}@{1} already on npm, skipping" -f $pkg.name, $pkg.version; exit 0 }
-          if ($outputs.is_tag -ne 'true') { npm publish --dry-run; exit $LASTEXITCODE }
-
-          $publishArgs = @('--provenance', '--access', 'public')
-          if ($outputs.prerelease -eq 'true') { $publishArgs += @('--tag', 'beta') }
-
-          npm publish @publishArgs; exit $LASTEXITCODE
-
-  release:
-    name: GitHub Release
-    needs: [validate, publish-npm]
-    if: needs.validate.outputs.is_tag == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    permissions: { contents: write }
-    steps:
-      - uses: actions/checkout@v7
-        with: { persist-credentials: false }
-      - uses: ./.github/actions/setup-ts
-        with: { install-node: true, update-npm: true }
-      - shell: pwsh
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-          TAG: ${{ github.ref_name }}
-          OUTPUTS: '${{ toJSON(needs.validate.outputs) }}'
+          $pkg = Get-Content package.json | ConvertFrom-Json; $version = $pkg.version
+          $url = "https://npm.im/package/{0}/v/{1}" -f $pkg.name, $version; "url=$url" | Add-Content -Path $env:GITHUB_OUTPUT
+          if ($env:GITHUB_REF_NAME -ne "v$version") { "::error file=package.json,line=3,title=Tag mismatch::Tag $env:GITHUB_REF_NAME does not match package version $version"; exit 1 }
+      - name: Publish to npm
+        env: { NPM_CONFIG_PROVENANCE: "${{ vars.NPM_CONFIG_PROVENANCE || 'true' }}" }
         run: |
-          $outputs = ConvertFrom-Json $env:OUTPUTS
-          $pkg = Get-Content package.json | ConvertFrom-Json
-          $spec = "{0}@{1}" -f $pkg.name, $pkg.version
-          $asset = 'dist.tar.gz'
-
-          $release = gh release view $env:TAG --json isDraft,isImmutable,assets 2>$null | ConvertFrom-Json
-          $attached = $release.assets.name -contains $asset
-          $needsAsset = $outputs.is_stable -eq 'true' -and -not $attached
-
-          if ($needsAsset -and $release -and -not $release.isDraft -and $release.isImmutable) {
-            "::error::{0} is published and immutable, and carries no {1}" -f $env:TAG, $asset
-            exit 1
-          }
-
-          $files = @()
-          if ($needsAsset) {
-            $blob = $null
-            foreach ($attempt in 1..10) {
-              $blob = npm pack $spec --silent 2>$null
-              if ($LASTEXITCODE -eq 0 -and $blob) { break }
-              "::notice::{0} not on the registry yet (attempt {1}/10)" -f $spec, $attempt
-              $blob = $null
-              Start-Sleep -Seconds 15
-            }
-            if (-not $blob) { "::error::{0} never appeared on the registry" -f $spec; exit 1 }
-
-            Move-Item -Force $blob $asset
-            $files = @($asset)
-          }
-
-          $releaseArgs = @()
-          if ($outputs.prerelease -eq 'true') { $releaseArgs += '--prerelease' }
-
-          if ($release) {
-            if ($files) { gh release upload $env:TAG @files --clobber; if ($LASTEXITCODE -ne 0) { exit 1 } }
-            gh release edit $env:TAG --draft=false @releaseArgs
-          } else {
-            gh release create $env:TAG --generate-notes @releaseArgs @files
-          }
-          exit $LASTEXITCODE
+          $tag = $env:GITHUB_REF_NAME -like '*-*' ? 'beta' : 'latest'
+          bunx npm@11 publish --access public --tag $tag; exit $LASTEXITCODE
+      - name: Create GitHub release
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          $args = @($env:GITHUB_REF_NAME, '--verify-tag', '--generate-notes')
+          if ($env:GITHUB_REF_NAME -like '*-*') { $args += '--prerelease' }
+          gh release create @args; exit $LASTEXITCODE

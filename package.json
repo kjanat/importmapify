@@ -25,6 +25,9 @@
 	},
 	"sideEffects": false,
 	"type": "module",
+	"imports": {
+		"#pkg": "./package.json"
+	},
 	"exports": {
 		".": {
 			"types": "./dist/index.d.mts",
@@ -49,7 +52,10 @@
 		"lint": "biome lint",
 		"prepack": "bun --bun bd -l error",
 		"prepublishOnly": "[ -n \"${GITHUB_ACTIONS:-}\" ] || { printf '%s\\n' 'manual npm publish blocked; use release workflow for provenance' >&2; exit 1; }",
+		"runbin": "node \"$(jq -r '.bin.[]' package.json)\" --help",
 		"test": "bun test --coverage",
+		"test:coverage": "bun test --coverage",
+		"test:smoke": "node scripts/smoke.mjs",
 		"test:watch": "bun test --watch",
 		"typecheck": "bunx @typescript/native --noEmit"
 	},

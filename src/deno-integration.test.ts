@@ -1,9 +1,9 @@
-import { which } from 'bun';
 import { describe, expect, it } from 'bun:test';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { which } from 'bun';
 import { writeImportMap } from './import-map.ts';
 
 const denoPath = which('deno');
