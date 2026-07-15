@@ -40,7 +40,7 @@ export const generateCommand: AnyCommandBuilder = command('generate')
 			.alias('r'),
 	)
 	.flag('manifest', flag.string().default('package.json').describe('Manifest path, relative to root.').alias('m'))
-	.flag('out', flag.string().default('deno.import_map.json').describe('Output path, relative to root.').alias('o'))
+	.flag('out', flag.string().default('import_map.json').describe('Output path, relative to root.').alias('o'))
 	.flag(
 		'import',
 		flag.array(flag.string()).describe('Additional import entry as key=value. Repeatable.').alias('i'),

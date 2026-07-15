@@ -174,7 +174,7 @@ function formatImportMap(map: ImportMapDocument): string {
  *
  * const output = writeImportMap({
  *   root: Deno.cwd(),
- *   out: 'deno.import_map.json',
+ *   out: 'import_map.json',
  * });
  *
  * console.log(`Wrote ${output}`);

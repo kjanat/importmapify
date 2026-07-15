@@ -26,7 +26,7 @@ describe.skipIf(denoPath === null)('generated import map under real Deno', () =>
 				JSON.stringify({ imports: { '#lib/*': './src/lib/*.ts' } }),
 			);
 
-			const out = writeImportMap({ root, out: 'deno.import_map.json' });
+			const out = writeImportMap({ root, out: 'import_map.json' });
 
 			if (denoPath === null) throw new Error('deno not found');
 			execFileSync(denoPath, ['check', `--import-map=${out}`, 'src/main.ts'], { cwd: root });
@@ -52,7 +52,7 @@ describe.skipIf(denoPath === null)('generated import map under real Deno', () =>
 
 			const out = writeImportMap({
 				root,
-				out: 'deno.import_map.json',
+				out: 'import_map.json',
 				additionalImports: { logger: './shared/default.ts' },
 				scopes: { './tests/': { logger: './shared/scoped.ts' } },
 			});

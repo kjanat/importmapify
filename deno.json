@@ -37,6 +37,9 @@
 			"output": ["import_map.json"]
 		}
 	},
+	"lint": {
+		"rules": { "tags": ["recommended", "jsr"] }
+	},
 	"preferPackageJson": false,
 	"homepage": "https://github.com/kjanat/importmapify#readme",
 	"repository": {

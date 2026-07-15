@@ -39,7 +39,7 @@ describe('generateCommand', () => {
 
 		expect(result.exitCode).toBe(0);
 		expect(result.stdout.some((line) => line.includes('Wrote'))).toBe(true);
-		expect(JSON.parse(fs.readFileSync(path.join(root, 'deno.import_map.json'), 'utf8'))).toEqual({
+		expect(JSON.parse(fs.readFileSync(path.join(root, 'import_map.json'), 'utf8'))).toEqual({
 			imports: { '#config': './src/config.ts' },
 		});
 	});
@@ -52,7 +52,7 @@ describe('generateCommand', () => {
 		expect(JSON.parse(result.stdout.join(''))).toEqual({
 			imports: { '#config': './src/config.ts' },
 		});
-		expect(fs.existsSync(path.join(root, 'deno.import_map.json'))).toBe(false);
+		expect(fs.existsSync(path.join(root, 'import_map.json'))).toBe(false);
 	});
 
 	it('accepts repeated --import key=value flags', async () => {

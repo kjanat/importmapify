@@ -184,9 +184,9 @@ describe('formatImportMap', () => {
 describe('writeImportMap', () => {
 	it('rebases automatically when out is nested and returns the written path', () => {
 		const root = fixture({ '#config': './src/config.ts' }, ['src/config.ts']);
-		const out = writeImportMap({ root, out: '.cache/maps/deno.import_map.json' });
+		const out = writeImportMap({ root, out: '.cache/maps/import_map.json' });
 
-		expect(out).toBe(path.join(root, '.cache/maps/deno.import_map.json'));
+		expect(out).toBe(path.join(root, '.cache/maps/import_map.json'));
 		expect(JSON.parse(fs.readFileSync(out, 'utf8'))).toEqual({
 			imports: { '#config': '../../src/config.ts' },
 		});
@@ -194,7 +194,7 @@ describe('writeImportMap', () => {
 
 	it('creates missing output directories', () => {
 		const root = fixture({ '#config': './src/config.ts' }, ['src/config.ts']);
-		const out = writeImportMap({ root, out: 'deno.import_map.json' });
+		const out = writeImportMap({ root, out: 'import_map.json' });
 		expect(JSON.parse(fs.readFileSync(out, 'utf8'))).toEqual({
 			imports: { '#config': './src/config.ts' },
 		});
@@ -204,7 +204,7 @@ describe('writeImportMap', () => {
 		const root = fixture({});
 		const out = writeImportMap({
 			root,
-			out: '.cache/maps/deno.import_map.json',
+			out: '.cache/maps/import_map.json',
 			scopes: { './tests/': { logger: './tests/logger.ts' } },
 		});
 		expect(JSON.parse(fs.readFileSync(out, 'utf8'))).toEqual({

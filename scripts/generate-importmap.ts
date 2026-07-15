@@ -1,7 +1,7 @@
 #!/usr/bin/env -S deno run -A --no-config
 
-import pkg from "#pkg" with { type: 'json' };
-import { writeImportMap } from "#src/map.ts";
+import pkg from '../package.json' with { type: 'json' };
+import { writeImportMap } from '../src/map.ts';
 
 const dreamcli = pkg['dependencies']['dreamcli'].replace(/^npm:/, 'jsr:');
 const bunTypes = `npm:bun-types@${pkg['devDependencies']['@types/bun']}`;

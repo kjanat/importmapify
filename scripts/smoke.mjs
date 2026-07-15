@@ -13,7 +13,7 @@ fs.mkdirSync(path.join(root, 'src/lib'), { recursive: true });
 fs.writeFileSync(path.join(root, 'src/lib/bytes.ts'), '');
 fs.writeFileSync(path.join(root, 'package.json'), JSON.stringify({ imports: { '#lib/*': './src/lib/*.ts' } }));
 
-const out = writeImportMap({ root, out: 'deno.import_map.json' });
+const out = writeImportMap({ root, out: 'import_map.json' });
 const map = JSON.parse(fs.readFileSync(out, 'utf8'));
 if (map.imports['#lib/bytes'] !== './src/lib/bytes.ts') {
 	throw new Error(`smoke test failed: ${JSON.stringify(map)}`);
