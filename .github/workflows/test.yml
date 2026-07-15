@@ -24,4 +24,4 @@ jobs:
       - name: Node smoke test (dist)
         run: node scripts/smoke.mjs
       - name: CLI smoke test (dist)
-        run: node dist/cli.js --help
+        run: node "$(node -p "require('./package.json').bin.importmapify")" --help

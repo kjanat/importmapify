@@ -11,11 +11,14 @@
 		"noImplicitOverride": true,
 		"noFallthroughCasesInSwitch": true,
 		"forceConsistentCasingInFileNames": true,
+		"declaration": true,
 		"skipLibCheck": true,
 		"allowImportingTsExtensions": true,
 		"resolveJsonModule": true,
 		"noEmit": true,
-		"types": ["node", "bun-types"]
+		"isolatedDeclarations": true,
+		"stripInternal": true,
+		"types": ["node", "bun"]
 	},
 	"include": ["./src/**/*.ts"],
 	"exclude": ["./dist", "./node_modules"]

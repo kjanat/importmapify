@@ -1,4 +1,5 @@
-import { CLIError, command, flag } from '@kjanat/dreamcli';
+import type { AnyCommandBuilder } from 'dreamcli';
+import { CLIError, command, flag } from 'dreamcli';
 import fs from 'node:fs';
 import path from 'node:path';
 import { createImportMap, formatImportMap, writeImportMap } from './import-map.ts';
@@ -14,7 +15,7 @@ function parseKeyValue(raw: string): readonly [string, string] {
 	return [raw.slice(0, eq), raw.slice(eq + 1)];
 }
 
-export const generateCommand = command('generate')
+export const generateCommand: AnyCommandBuilder = command('generate')
 	.description('Expand package.json subpath-pattern imports into a Deno import map.')
 	.flag(
 		'root',

@@ -1,4 +1,4 @@
-import { runCommand } from '@kjanat/dreamcli/testkit';
+import { runCommand } from 'dreamcli/testkit';
 import { afterEach, describe, expect, it } from 'bun:test';
 import fs from 'node:fs';
 import os from 'node:os';

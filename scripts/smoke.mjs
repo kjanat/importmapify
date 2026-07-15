@@ -1,7 +1,10 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { writeImportMap } from '../dist/index.js';
+import pkg from '../package.json' with { type: 'json' };
+
+const pkgUrl = new URL('../package.json', import.meta.url);
+const { writeImportMap } = await import(new URL(pkg.exports['.'].default, pkgUrl).href);
 
 const root = fs.mkdtempSync(path.join(os.tmpdir(), 'importmapify-smoke-'));
 fs.mkdirSync(path.join(root, 'src/lib'), { recursive: true });

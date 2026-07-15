@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { cli } from '@kjanat/dreamcli';
+import { cli } from 'dreamcli';
 import { generateCommand } from './cli.ts';
 
 cli('importmapify')
