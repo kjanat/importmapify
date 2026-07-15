@@ -1,6 +1,6 @@
 {
 	"name": "importmapify",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"description": "Expand package.json subpath-pattern imports into explicit Deno import map entries.",
 	"keywords": [
 		"deno",
@@ -12,7 +12,9 @@
 		"ansispeck"
 	],
 	"homepage": "https://github.com/kjanat/importmapify#readme",
-	"bugs": "https://github.com/kjanat/importmapify/issues",
+	"bugs": {
+		"url": "https://github.com/kjanat/importmapify/issues"
+	},
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/kjanat/importmapify.git"
