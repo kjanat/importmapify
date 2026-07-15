@@ -1,0 +1,47 @@
+{
+	"useTabs": true,
+	"indentWidth": 2,
+	"lineWidth": 100,
+	"newLineKind": "lf",
+	"typescript": {
+		"quoteStyle": "alwaysSingle",
+		"associations": ["!**/*.*{ts,js}"],
+		"lineWidth": 100,
+		"useTabs": true,
+		"module.sortImportDeclarations": "maintain",
+		"module.sortExportDeclarations": "maintain",
+		"exportDeclaration.sortNamedExports": "maintain",
+		"exportDeclaration.sortTypeOnlyExports": "maintain",
+		"importDeclaration.sortNamedImports": "maintain",
+		"importDeclaration.sortTypeOnlyImports": "maintain"
+	},
+	"json": {
+		"jsonTrailingCommaFiles": ["!biome.jsonc", "**/tsconfig*.json"]
+	},
+	"markdown": { "textWrap": "always", "associations": ["!*.md"] },
+	"prettier": { "useTabs": false, "associations": ["*.md"], "singleQuote": true },
+	"biome": {
+		"lineEnding": "lf",
+		"indentWidth": 2,
+		"indentStyle": "tab",
+		"lineWidth": 100,
+		"semicolons": "always",
+		"quoteStyle": "single",
+		"quoteProperties": "asNeeded",
+		"trailingCommas": "all",
+		"arrowParentheses": "always",
+		"bracketSpacing": true,
+		"bracketSameLine": true,
+		"json.indentWidth": 2,
+		"json.indentStyle": "tab",
+		"json.lineWidth": 100
+	},
+	"excludes": ["**/node_modules", "**/*-lock.json", "**/bun.lock", "**/dist", "**/coverage"],
+	"plugins": [
+		"https://plugins.dprint.dev/json-0.23.0.wasm",
+		"https://plugins.dprint.dev/markdown-0.22.1.wasm",
+		"https://plugins.dprint.dev/typescript-0.96.1.wasm",
+		"https://plugins.dprint.dev/biome-0.13.1.wasm",
+		"https://plugins.dprint.dev/prettier-0.72.0.json@6e7af2cb2182a5a11358d3adde9ae0ef3b94b7d2e5dcfdd252e3f7c3916541fe"
+	]
+}

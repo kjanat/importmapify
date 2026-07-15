@@ -1,0 +1,57 @@
+name: Setup Js Runtime
+description: Setup Node.js and Bun
+
+inputs:
+  install-bun: { description: Install Bun, required: false, default: 'true' }
+  bun-version: { description: Bun version to install, required: false, default: 'latest' }
+  install-node: { description: Install Node.js, required: false, default: 'true' }
+  node-version: { description: Node version to install, required: false, default: 'file' }
+  node-registry-url:
+    {
+      description: 'npm registry URL for Node (writes auth-enabled .npmrc reading NODE_AUTH_TOKEN)',
+      required: false,
+      default: '',
+    }
+  update-npm: { description: 'Update npm to 11', required: false, default: 'true' }
+
+outputs:
+  bun-version:
+    {
+      description: The installed Bun version (if install-bun is true),
+      value: '${{ steps.setup-bun.outputs.bun-version }}',
+    }
+  node-version:
+    {
+      description: The installed Node.js version (if install-node is true),
+      value: '${{ steps.setup-node.outputs.node-version }}',
+    }
+  npm-version:
+    {
+      description: The installed npm version (if update-npm is true),
+      value: '${{ steps.update-npm.outputs.npm-version }}',
+    }
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Node
+      id: setup-node
+      if: ${{ inputs.install-node == 'true' }}
+      uses: actions/setup-node@v6
+      with:
+        node-version: ${{ inputs.node-version != 'file' && inputs.node-version || '' }}
+        node-version-file: ${{ inputs.node-version == 'file' && '.node-version' || '' }}
+        package-manager-cache: false
+        registry-url: ${{ inputs.node-registry-url }}
+
+    - name: Setup Bun
+      id: setup-bun
+      if: ${{ inputs.install-bun == 'true' }}
+      uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+      with: { bun-version: '${{ inputs.bun-version }}' }
+
+    - name: Update npm
+      id: update-npm
+      if: ${{ inputs.install-node == 'true' && inputs.update-npm == 'true' }}
+      shell: bash
+      run: npm install -g npm@11 && echo "npm-version=$(npm --version)" >> "${GITHUB_OUTPUT}"

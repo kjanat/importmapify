@@ -1,0 +1,19 @@
+name: Validate Release Version
+description: Extract and validate version from package.json against git tag
+
+inputs:
+  event-name: { description: 'GitHub event name, usually push or pull_request', required: false }
+  ref-name: { description: 'Git ref name, usually the tag name for push events', required: false }
+
+outputs:
+  version: { description: 'Validated version string, e.g. v1.2.3' }
+  is_push: { description: Whether this is a push event }
+  is_tag: { description: Whether this is a version tag push }
+  prerelease: { description: Whether this is a prerelease version }
+  is_stable: { description: Whether this is a stable tag release }
+  mode: { description: 'publish for tag pushes, dry-run otherwise' }
+  npm_url: { description: npm package URL for this version }
+
+runs:
+  using: node24
+  main: validate.mjs
