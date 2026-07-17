@@ -33,7 +33,7 @@ npx importmapify --root . --out import_map.json
 | --------------------------- | ----- | ------------------------------------------------------------------------- | ------------------- |
 | `--root`                    | `-r`  | Project root containing the manifest                                      | current directory   |
 | `--manifest`                | `-m`  | Manifest path, relative to root                                           | `package.json`      |
-| `--out`                     | `-o`  | Output path, relative to root                                             | `import_map.json`   |
+| `--out`                     | `-o`  | Output path resolved against root; relative, absolute, or `file://` URL   | `import_map.json`   |
 | `--import key=value`        | `-i`  | Extra import entry; repeatable                                            | none                |
 | `--package name=target`     | `-p`  | Package expanded to a conformant bare and trailing-slash pair; repeatable | none                |
 | `--scope prefix::key=value` | `-s`  | Scoped import override; repeatable                                        | none                |
@@ -71,12 +71,13 @@ const out = writeImportMap({
 });
 ```
 
-| Export            | Signature                                                  | Purpose                                                                               |
-| ----------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| `createImportMap` | `(options: CreateImportMapOptions) => ImportMapDocument`   | Build the import map in memory.                                                       |
-| `formatImportMap` | `(map: ImportMapDocument) => string`                       | Serialize to the canonical sorted, tab-indented JSON text.                            |
-| `writeImportMap`  | `(options: WriteImportMapOptions) => string`               | Build, serialize, and write to disk; returns the written path.                        |
-| `packageEntries`  | `(name: string, target: string) => Record<string, string>` | Build the bare and trailing-slash entry pair a package needs to resolve its subpaths. |
+| Export            | Signature                                                   | Purpose                                                                               |
+| ----------------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `defineConfig`    | `(options: WriteImportMapOptions) => WriteImportMapOptions` | Identity helper that types a config object for export and reuse.                      |
+| `createImportMap` | `(options: CreateImportMapOptions) => ImportMapDocument`    | Build the import map in memory.                                                       |
+| `formatImportMap` | `(map: ImportMapDocument) => string`                        | Serialize to the canonical sorted, tab-indented JSON text.                            |
+| `writeImportMap`  | `(options: WriteImportMapOptions) => string`                | Build, serialize, and write to disk; returns the written path.                        |
+| `packageEntries`  | `(name: string, target: string) => Record<string, string>`  | Build the bare and trailing-slash entry pair a package needs to resolve its subpaths. |
 
 `CreateImportMapOptions`:
 
@@ -91,9 +92,71 @@ const out = writeImportMap({
 | `relativeTo`        | Directory the written targets are rebased against.                                                | `root`                  |
 | `extensions`        | File extensions, with or without a leading dot, that pattern targets may match.                   | all files               |
 
-`WriteImportMapOptions` extends the above with `out`, the output path relative to `root`. `writeImportMap` rebases
+`WriteImportMapOptions` extends the above with an optional `out`, defaulting to `import_map.json` like the CLI. It is
+resolved against `root` and accepts a relative path, an absolute path, or a `file://` URL. `writeImportMap` rebases
 automatically against `out`'s directory, so a nested `out` (for example `.cache/maps/import_map.json`) still produces
 targets that resolve correctly from the map's own location.
+
+`defineConfig` returns its argument unchanged; it exists only to type an exported config object without a manual
+annotation. Under `isolatedDeclarations`, an exported binding still needs its own annotation, so there `defineConfig`
+helps only for a config used locally rather than exported.
+
+### Recipes
+
+Add dependencies with `packages`. Each entry expands to the bare specifier plus its conformant trailing-slash entry
+(`jsr:/` or `npm:/`), which Deno needs to resolve subpaths:
+
+```ts
+import { writeImportMap } from 'importmapify';
+
+writeImportMap({
+  root: import.meta.dirname,
+  packages: {
+    dreamcli: 'jsr:@kjanat/dreamcli@^3',
+    chalk: 'npm:chalk@5',
+  },
+});
+// dreamcli, dreamcli/ -> jsr:/@kjanat/dreamcli@^3/, chalk, chalk/ -> npm:/chalk@5/
+```
+
+Restrict pattern expansion to importable files with `extensions`, so a bare `./src/*` skips `.md`, `.json`, and other
+non-modules:
+
+```ts
+import { createImportMap } from 'importmapify';
+
+createImportMap({ root: import.meta.dirname, extensions: ['ts', 'tsx'] });
+```
+
+Build one conformant pair directly with `packageEntries`:
+
+```ts
+import { packageEntries } from 'importmapify';
+
+packageEntries('@std/async', 'jsr:@std/async@^1.0.0');
+// { '@std/async': 'jsr:@std/async@^1.0.0', '@std/async/': 'jsr:/@std/async@^1.0.0/' }
+```
+
+Type a reusable config with `defineConfig` and share it across calls:
+
+```ts
+import { createImportMap, defineConfig, writeImportMap } from 'importmapify';
+
+const config = defineConfig({ root: import.meta.dirname, packages: { chalk: 'npm:chalk@5' } });
+const map = createImportMap(config);
+const written = writeImportMap(config);
+```
+
+`root`, `relativeTo`, and `out` accept a path or a `file://` URL, so `import.meta.url` needs no `.pathname`:
+
+```ts
+import { writeImportMap } from 'importmapify';
+
+writeImportMap({
+  root: new URL('..', import.meta.url),
+  out: new URL('./import_map.json', import.meta.url),
+});
+```
 
 ### Project-local generator
 
@@ -166,15 +229,13 @@ the generated map is:
   "imports": {
     "#config": "./src/config.ts",
     "#lib/bytes": "./src/lib/bytes.ts",
-    "#lib/bytes.ts": "./src/lib/bytes.ts",
-    "#lib/codecs/hex": "./src/lib/codecs/hex.ts",
-    "#lib/codecs/hex.ts": "./src/lib/codecs/hex.ts"
+    "#lib/codecs/hex": "./src/lib/codecs/hex.ts"
   }
 }
 ```
 
-A key with its own suffix, such as `#lib/*.js` targeting `./src/lib/*.ts`, produces both the renamed specifier and the
-real filename: `#lib/bytes.js` and `#lib/bytes.ts`, both pointing at `./src/lib/bytes.ts`.
+Each matched file yields one specifier, the wildcard substituted into the key. A key with its own suffix, such as
+`#lib/*.js` targeting `./src/lib/*.ts`, produces the renamed specifier `#lib/bytes.js` pointing at `./src/lib/bytes.ts`.
 
 ## Scope and constraints
 

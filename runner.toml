@@ -1,7 +1,7 @@
 #:schema https://kjanat.github.io/runner/schemas/runner.toml.schema.json
 
 [resolution]
-fallback = "probe"
+fallback    = "probe"
 on_mismatch = "error"
 
 [pm]

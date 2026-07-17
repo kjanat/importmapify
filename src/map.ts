@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { expandPattern, isRecord, parsePattern, rebaseTarget, resolveCondition } from '#src/expand.ts';
+import { fileURLToPath } from 'node:url';
+import { expandPattern, isRecord, parsePattern, rebaseTarget, resolveCondition } from '#src/expand';
 
 /** A deterministic Deno import map generated from package import entries. */
 interface ImportMapDocument {
@@ -12,8 +13,8 @@ interface ImportMapDocument {
 
 /** Options for creating an import map without writing it to disk. */
 interface CreateImportMapOptions {
-	/** Project directory containing the package manifest. */
-	readonly root: string;
+	/** Project directory containing the package manifest, as a path or `file://` URL. */
+	readonly root: string | URL;
 	/** Manifest path relative to {@link root}. Defaults to `package.json`. */
 	readonly manifest?: string;
 	/** Conditional import keys to try in order. Defaults to `import`, then `default`. */
@@ -24,20 +25,33 @@ interface CreateImportMapOptions {
 	readonly additionalImports?: Readonly<Record<string, string>>;
 	/** Scope-specific import overrides keyed by scope prefix. */
 	readonly scopes?: Readonly<Record<string, Readonly<Record<string, string>>>>;
-	/** Directory against which relative targets are rebased. Defaults to {@link root}. */
-	readonly relativeTo?: string;
+	/** Directory against which relative targets are rebased, as a path or `file://` URL. Defaults to {@link root}. */
+	readonly relativeTo?: string | URL;
 	/** File extensions, with or without a leading dot, that pattern targets may match. Unset matches every file. */
 	readonly extensions?: readonly string[];
 }
 
 /** Options for creating and writing an import map. */
 interface WriteImportMapOptions extends CreateImportMapOptions {
-	/** Output path relative to {@link CreateImportMapOptions.root | root}. */
-	readonly out: string;
+	/**
+	 * Output path, resolved against {@link CreateImportMapOptions.root | root}. Accepts a relative path, an
+	 * absolute path, a `file://` URL string, or a {@link URL}. Defaults to `import_map.json`.
+	 */
+	readonly out?: string | URL;
 }
 
 const DEFAULT_CONDITIONS = ['import', 'default'] as const;
+const DEFAULT_OUT = 'import_map.json';
 const SCHEME_PREFIX = /^(jsr|npm):(?!\/)/;
+
+function toPath(value: string | URL): string {
+	if (typeof value === 'string') return value.startsWith('file://') ? fileURLToPath(value) : value;
+	return fileURLToPath(value.href);
+}
+
+function resolveOut(root: string | URL, out: string | URL): string {
+	return path.resolve(toPath(root), toPath(out));
+}
 
 function filesUnder(dir: string, prefix = ''): string[] {
 	if (!fs.existsSync(dir)) return [];
@@ -186,20 +200,21 @@ function rebaseScopePrefix(root: string, relativeTo: string, scope: string): str
  * @returns A sorted import map document.
  */
 function createImportMap(options: CreateImportMapOptions): ImportMapDocument {
-	const manifestPath = path.join(options.root, options.manifest ?? 'package.json');
+	const root = toPath(options.root);
+	const manifestPath = path.join(root, options.manifest ?? 'package.json');
 	const manifest = readManifest(manifestPath);
 	const manifestImports = isRecord(manifest.imports) ? manifest.imports : {};
 	const conditions =
 		options.conditions !== undefined && options.conditions.length > 0 ? options.conditions : DEFAULT_CONDITIONS;
-	const relativeTo = options.relativeTo ?? options.root;
+	const relativeTo = options.relativeTo === undefined ? root : toPath(options.relativeTo);
 	const expansion: ExpansionOptions = { conditions, extensions: options.extensions ?? [] };
-	const imports = expandManifest(options.root, relativeTo, manifestImports, expansion);
+	const imports = expandManifest(root, relativeTo, manifestImports, expansion);
 
 	for (const [key, value] of Object.entries(collectAdditional(options))) {
-		imports[key] = rebaseTarget(options.root, relativeTo, value);
+		imports[key] = rebaseTarget(root, relativeTo, value);
 	}
 
-	const scopes = buildScopes(options.root, relativeTo, options.scopes ?? {});
+	const scopes = buildScopes(root, relativeTo, options.scopes ?? {});
 
 	const sortedImports = sortEntries(imports);
 	const sortedScopes = Object.fromEntries(Object.entries(scopes).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)));
@@ -240,19 +255,16 @@ function formatImportMap(map: ImportMapDocument): string {
  * // Write the conventional Deno import map file.
  * import { writeImportMap } from 'jsr:@kjanat/importmapify';
  *
- * const output = writeImportMap({
- *   root: Deno.cwd(),
- *   out: 'import_map.json',
- * });
+ * const output = writeImportMap({ root: Deno.cwd() });
  *
  * console.log(`Wrote ${output}`);
  * ```
  *
- * @param options Creation options plus the output path.
+ * @param options Creation options plus the optional output path.
  * @returns The absolute path of the written file.
  */
 function writeImportMap(options: WriteImportMapOptions): string {
-	const out = path.join(options.root, options.out);
+	const out = resolveOut(options.root, options.out ?? DEFAULT_OUT);
 	const relativeTo = options.relativeTo ?? path.dirname(out);
 	const map = createImportMap({ ...options, relativeTo });
 	fs.mkdirSync(path.dirname(out), { recursive: true });
@@ -287,5 +299,28 @@ function packageEntries(name: string, target: string): Record<string, string> {
 	return { [name]: target, [`${name}/`]: directoryTarget(target) };
 }
 
+/**
+ * Type an import map configuration for export and reuse, then pass it to {@link createImportMap} or
+ * {@link writeImportMap}. Returns its input unchanged; it exists only for inference and autocomplete.
+ *
+ * @example
+ * ```ts
+ * import { defineConfig, writeImportMap } from 'jsr:@kjanat/importmapify';
+ *
+ * export const config = defineConfig({
+ *   root: import.meta.dirname,
+ *   packages: { dreamcli: 'jsr:@kjanat/dreamcli@^3' },
+ * });
+ *
+ * writeImportMap(config);
+ * ```
+ *
+ * @param options Import map configuration, with an optional `out`.
+ * @returns The same `options` value, typed as {@link WriteImportMapOptions}.
+ */
+function defineConfig(options: WriteImportMapOptions): WriteImportMapOptions {
+	return options;
+}
+
 export type { CreateImportMapOptions, ImportMapDocument, WriteImportMapOptions };
-export { createImportMap, formatImportMap, packageEntries, writeImportMap };
+export { createImportMap, DEFAULT_OUT, defineConfig, formatImportMap, packageEntries, resolveOut, writeImportMap };

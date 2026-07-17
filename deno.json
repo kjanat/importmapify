@@ -1,7 +1,7 @@
 {
 	"$schema": "https://raw.githubusercontent.com/denoland/deno/refs/heads/main/cli/schemas/config-file.v1.json",
 	"name": "@kjanat/importmapify",
-	"version": "1.0.1",
+	"version": "1.1.0",
 	"exports": "./src/mod.ts",
 	"publish": {
 		"include": [
@@ -21,7 +21,7 @@
 	"tasks": {
 		"build": {
 			"description": "build for npm distribution",
-			"command": "bunx tsdown",
+			"command": "bun run build",
 			"files": ["src/**", "package.json", "bun.lock"],
 			"output": ["dist/**", "deno.json"]
 		},
@@ -32,7 +32,7 @@
 		},
 		"importmapify": {
 			"description": "generate importmap for deno",
-			"command": "deno run --no-config -A scripts/generate-importmap.ts",
+			"command": "bun scripts/generate-importmap.ts",
 			"files": ["package.json", "scripts/generate-importmap.ts", "src/**"],
 			"output": ["import_map.json"]
 		}

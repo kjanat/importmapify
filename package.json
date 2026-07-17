@@ -1,6 +1,6 @@
 {
 	"name": "importmapify",
-	"version": "1.0.1",
+	"version": "1.1.0",
 	"description": "Expand package.json subpath-pattern imports into explicit Deno import map entries.",
 	"keywords": [
 		"deno",
@@ -30,7 +30,7 @@
 	"imports": {
 		"#pkg": "./package.json",
 		"#deno": "./deno.json",
-		"#src/*": "./src/*"
+		"#src/*": "./src/*.ts"
 	},
 	"exports": {
 		".": {
@@ -52,14 +52,14 @@
 		"fmt": "biome check --fix 2>/dev/null; dprint fmt",
 		"jsr:publish": "bunx jsr publish --allow-dirty",
 		"lint": "biome lint",
-		"prepack": "bun --bun bd -l error",
+		"prepack": "tsdown -l error",
 		"prepare": "./scripts/generate-importmap.ts",
 		"runbin": "node \"$(jq -r '.bin.importmapify' package.json)\"",
-		"test": "bun test --coverage",
-		"test:coverage": "bun test --coverage",
-		"test:smoke": "node scripts/smoke.mjs",
-		"test:watch": "bun test --watch",
-		"typecheck": "bunx @typescript/native --noEmit",
+		"test": "bun test",
+		"test:coverage": "run -q test --coverage",
+		"test:smoke": "./scripts/smoke.mjs",
+		"test:watch": "run -q test --watch",
+		"typecheck": "run @typescript/native --noEmit",
 		"url:jsr": "printf 'url=https://jsr.io/%s@%s\n' \"$(jq -r '.name' deno.json)\" \"$(jq -r '.version' deno.json)\"",
 		"url:npm": "printf 'url=https://npm.im/package/%s/v/%s\n' \"$(jq -r '.name' package.json)\" \"$(jq -r '.version' package.json)\"",
 		"volta:bump": "volta pin node@latest npm@11; node --version>.node-version; run bd"
@@ -78,6 +78,7 @@
 		"publint": "^0.3.21",
 		"runner-run": "^0.20.0",
 		"sort-package-json": "^4.0.0",
+		"tombi": "^1.2.1",
 		"tsdown": "^0.22.7",
 		"typescript": ">=6,<7",
 		"unplugin-unused": "^0.5.7"

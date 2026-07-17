@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'bun:test';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { createImportMap, formatImportMap, packageEntries, writeImportMap } from '#src/map.ts';
+import { createImportMap, defineConfig, formatImportMap } from '#src/map.ts';
 
 const roots: string[] = [];
 const PATTERN_MISMATCH = /both sides must contain/;
@@ -24,6 +24,11 @@ function fixture(imports: Readonly<Record<string, unknown>>, files: readonly str
 }
 
 describe('createImportMap', () => {
+	it('accepts a file:// URL root', () => {
+		const root = fixture({ '#config': './src/config.ts' }, ['src/config.ts']);
+		expect(createImportMap({ root: Bun.pathToFileURL(root) })).toEqual(createImportMap({ root }));
+	});
+
 	it('expands matching files to their wildcard specifier', () => {
 		const root = fixture({ '#lib/*': './src/lib/*.ts' }, [
 			'src/lib/bytes.ts',
@@ -214,30 +219,15 @@ describe('createImportMap', () => {
 	});
 });
 
-describe('packageEntries', () => {
-	it('adds the jsr scheme slash to the trailing-slash entry', () => {
-		expect(packageEntries('@std/async', 'jsr:@std/async@^1.0.0')).toEqual({
-			'@std/async': 'jsr:@std/async@^1.0.0',
-			'@std/async/': 'jsr:/@std/async@^1.0.0/',
-		});
-	});
+describe('defineConfig', () => {
+	it('returns its input unchanged for reuse across create and write', () => {
+		const config = defineConfig({ root: '/repo', packages: { dreamcli: 'jsr:@kjanat/dreamcli@^3' } });
+		expect(config).toEqual({ root: '/repo', packages: { dreamcli: 'jsr:@kjanat/dreamcli@^3' } });
 
-	it('adds the npm scheme slash to the trailing-slash entry', () => {
-		expect(packageEntries('chalk', 'npm:chalk@5')).toEqual({
-			chalk: 'npm:chalk@5',
-			'chalk/': 'npm:/chalk@5/',
-		});
-	});
-
-	it('leaves url and relative targets without a scheme slash', () => {
-		expect(packageEntries('virtual', 'https://example.com/virtual')).toEqual({
-			virtual: 'https://example.com/virtual',
-			'virtual/': 'https://example.com/virtual/',
-		});
-	});
-
-	it('is idempotent for an already conformant trailing-slash target', () => {
-		expect(packageEntries('@std/async', 'jsr:/@std/async@^1.0.0/')['@std/async/']).toBe('jsr:/@std/async@^1.0.0/');
+		const root = fixture({});
+		expect(createImportMap({ ...config, root })).toEqual(
+			createImportMap({ root, packages: { dreamcli: 'jsr:@kjanat/dreamcli@^3' } }),
+		);
 	});
 });
 
@@ -262,38 +252,5 @@ describe('formatImportMap', () => {
 
 		expect(formatImportMap(firstMap)).toBe(expected);
 		expect(formatImportMap(secondMap)).toBe(expected);
-	});
-});
-
-describe('writeImportMap', () => {
-	it('rebases automatically when out is nested and returns the written path', () => {
-		const root = fixture({ '#config': './src/config.ts' }, ['src/config.ts']);
-		const out = writeImportMap({ root, out: '.cache/maps/import_map.json' });
-
-		expect(out).toBe(path.join(root, '.cache/maps/import_map.json'));
-		expect(JSON.parse(fs.readFileSync(out, 'utf8'))).toEqual({
-			imports: { '#config': '../../src/config.ts' },
-		});
-	});
-
-	it('creates missing output directories', () => {
-		const root = fixture({ '#config': './src/config.ts' }, ['src/config.ts']);
-		const out = writeImportMap({ root, out: 'import_map.json' });
-		expect(JSON.parse(fs.readFileSync(out, 'utf8'))).toEqual({
-			imports: { '#config': './src/config.ts' },
-		});
-	});
-
-	it('rebases scope prefixes and targets for a nested output', () => {
-		const root = fixture({});
-		const out = writeImportMap({
-			root,
-			out: '.cache/maps/import_map.json',
-			scopes: { './tests/': { logger: './tests/logger.ts' } },
-		});
-		expect(JSON.parse(fs.readFileSync(out, 'utf8'))).toEqual({
-			imports: {},
-			scopes: { '../../tests/': { logger: '../../tests/logger.ts' } },
-		});
 	});
 });

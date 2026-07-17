@@ -4,7 +4,8 @@ import { URL } from 'node:url';
 import { sortPackageJson } from 'sort-package-json';
 import { defineConfig } from 'tsdown';
 import pkg from '#pkg' with { type: 'json' };
-import { importmapoptions, writeImportMap } from './scripts/generate-importmap.ts';
+import { writeImportMap } from '#src/map';
+import importMapOptions from './scripts/generate-importmap.ts';
 
 const entry = './src/mod.ts';
 const JSR_SCOPE = '@kjanat';
@@ -80,12 +81,13 @@ export default defineConfig({
 				homepage: pkg.homepage,
 				repository: pkg.repository,
 				license: pkg.license,
+				importMap: `./${importMapOptions.out ?? 'import_map.json'}`,
 			};
 			await fs.writeFile(denoPath, `${JSON.stringify(deno, null, '\t')}\n`, {
 				encoding: 'utf8',
 			});
 			execFileSync('dprint', ['fmt'], { stdio: 'inherit' });
-			writeImportMap({ ...importmapoptions, out: 'import_map.json' });
+			writeImportMap(importMapOptions);
 		},
 	},
 });

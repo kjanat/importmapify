@@ -23,7 +23,7 @@ jobs:
       - uses: oven-sh/setup-bun@v2
       - { uses: denoland/setup-deno@v2, with: { deno-version: v2.x } }
       - uses: kjanat/runner@master
-      - run: runner install -f build typecheck check test:coverage test:smoke
+      - run: runner install -qsf build typecheck check test:coverage test:smoke scripts/smoke.mjs
       - run: node --run runbin -- --help
 
   npm:

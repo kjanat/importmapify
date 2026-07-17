@@ -57,14 +57,12 @@ describe('generateCommand', () => {
 
 	it('accepts repeated --import key=value flags', async () => {
 		const root = fixture({});
+		/* biome-ignore format: kv */
 		const result = await runCommand(generateCommand, [
-			'--root',
-			root,
+			'--root',	root,
 			'--stdout',
-			'--import',
-			'bun:test=./node_modules/bun-types/test.d.ts',
-			'--import',
-			'virtual=https://example.com/virtual.ts',
+			'--import', 'bun:test=./node_modules/bun-types/test.d.ts',
+			'--import', 'virtual=https://example.com/virtual.ts',
 		]);
 
 		expect(JSON.parse(result.stdout.join(''))).toEqual({
@@ -77,12 +75,11 @@ describe('generateCommand', () => {
 
 	it('expands --package name=target into a conformant bare and trailing-slash pair', async () => {
 		const root = fixture({});
+		/* biome-ignore format: kv */
 		const result = await runCommand(generateCommand, [
-			'--root',
-			root,
+			'--root', root,
 			'--stdout',
-			'--package',
-			'dreamcli=jsr:@kjanat/dreamcli@^3',
+			'--package', 'dreamcli=jsr:@kjanat/dreamcli@^3',
 		]);
 
 		expect(JSON.parse(result.stdout.join(''))).toEqual({
@@ -104,16 +101,13 @@ describe('generateCommand', () => {
 
 	it('accepts repeated --scope prefix::key=value flags', async () => {
 		const root = fixture({});
+		/* biome-ignore format: kv */
 		const result = await runCommand(generateCommand, [
-			'--root',
-			root,
+			'--root', root,
 			'--stdout',
-			'--scope',
-			'./tests/::dreamcli/testkit=jsr:@kjanat/dreamcli/old-testkit',
-			'--scope',
-			'./tests/::virtual=https://example.com/mod.ts?value=a=b',
-			'--scope',
-			'./tests/::dreamcli/testkit=jsr:@kjanat/dreamcli/testkit',
+			'--scope', './tests/::dreamcli/testkit=jsr:@kjanat/dreamcli/old-testkit',
+			'--scope', './tests/::virtual=https://example.com/mod.ts?value=a=b',
+			'--scope', './tests/::dreamcli/testkit=jsr:@kjanat/dreamcli/testkit',
 		]);
 
 		expect(JSON.parse(result.stdout.join(''))).toEqual({

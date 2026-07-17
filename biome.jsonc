@@ -28,6 +28,7 @@
 			"correctness": {
 				"noNodejsModules": "off",
 				"noUnresolvedImports": "off",
+				"useImportExtensions": "off",
 				"useQwikClasslist": "off",
 				"useQwikValidLexicalScope": "off"
 			},

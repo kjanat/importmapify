@@ -1,9 +1,9 @@
 import { existsSync, readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname } from 'node:path';
 import { cwd } from 'node:process';
 import type { AnyCommandBuilder } from 'dreamcli';
 import { CLIError, command, flag } from 'dreamcli';
-import { createImportMap, formatImportMap, writeImportMap } from '#src/map.ts';
+import { createImportMap, DEFAULT_OUT, formatImportMap, resolveOut, writeImportMap } from '#src/map';
 
 function parseKeyValue(raw: string, flagName: string, code: string): readonly [string, string] {
 	const eq = raw.indexOf('=');
@@ -57,7 +57,14 @@ export const generateCommand: AnyCommandBuilder = command('generate')
 			.alias('r'),
 	)
 	.flag('manifest', flag.string().default('package.json').describe('Manifest path, relative to root.').alias('m'))
-	.flag('out', flag.string().default('import_map.json').describe('Output path, relative to root.').alias('o'))
+	.flag(
+		'out',
+		flag
+			.string()
+			.default(DEFAULT_OUT)
+			.describe('Output path resolved against root; relative, absolute, or file:// URL.')
+			.alias('o'),
+	)
 	.flag(
 		'import',
 		flag.array(flag.string()).describe('Additional import entry as key=value. Repeatable.').alias('i'),
@@ -114,7 +121,7 @@ export const generateCommand: AnyCommandBuilder = command('generate')
 			});
 		}
 
-		const outPath = join(root, of);
+		const outPath = resolveOut(root, of);
 		const relativeTo = dirname(outPath);
 		const packages = parseEntries(pkf ?? [], 'package', 'invalid-package-flag');
 		const additionalImports = parseEntries(imf ?? [], 'import', 'invalid-import-flag');

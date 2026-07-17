@@ -18,7 +18,7 @@
  */
 
 import { cli as dreamcli } from 'dreamcli';
-import { generateCommand } from '#src/cli.ts';
+import { generateCommand } from '#src/cli';
 
 const cli = dreamcli('importmapify')
 	.manifest({ from: import.meta.url, files: ['package.json', 'deno.json'] })
@@ -28,5 +28,5 @@ const cli = dreamcli('importmapify')
 
 if (import.meta.main) cli.run();
 
-export type { CreateImportMapOptions, ImportMapDocument, WriteImportMapOptions } from '#src/map.ts';
-export { createImportMap, formatImportMap, packageEntries, writeImportMap } from '#src/map.ts';
+export type { CreateImportMapOptions, ImportMapDocument, WriteImportMapOptions } from '#src/map';
+export { createImportMap, defineConfig, formatImportMap, packageEntries, writeImportMap } from '#src/map';

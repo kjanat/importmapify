@@ -1,8 +1,10 @@
 [run]
 silent = true
+shell  = "bun"
+bun    = true
 
 [install]
-linker = "hoisted"
+linker   = "hoisted"
 registry = "https://registry.npmjs.org"
 
 [install.scopes]

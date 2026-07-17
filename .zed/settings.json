@@ -56,6 +56,40 @@
 					"config": "./deno.json"
 				}
 			}
+		},
+		"biome": {
+			"settings": {
+				"inline_config": {
+					"formatter": {
+						"enabled": false,
+						"indentStyle": "tab",
+						"lineWidth": 115
+					},
+					"overrides": [
+						{
+							"includes": ["**/*.jsonc", ".zed/settings.json", "!biome.jsonc"],
+							"json": { "formatter": { "trailingCommas": "all" } }
+						},
+						{
+							"includes": ["scripts/**"],
+							"linter": { "rules": { "suspicious": { "noConsole": "off" } } }
+						},
+						{
+							"includes": ["src/{index,mod}.ts"],
+							"linter": { "rules": { "performance": { "noBarrelFile": "off" } } }
+						},
+						{
+							"includes": ["**/*.test.ts"],
+							"linter": {
+								"rules": {
+									"complexity": { "noExcessiveLinesPerFunction": "off" },
+									"style": { "noMagicNumbers": "off" }
+								}
+							}
+						}
+					]
+				}
+			}
 		}
 	}
 }

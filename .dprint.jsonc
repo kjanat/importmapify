@@ -28,12 +28,18 @@
 	"yaml": { "printWidth": 200 },
 	"exec": {
 		"cwd": "${configDir}",
-		"associations": ["**/package.json"],
+		"associations": ["**/package.json", "**/*.toml"],
 		"commands": [
 			{
 				"associations": ["**/package.json"],
-				"command": "bun sort-package-json --stdin",
+				"command": "run -q sort-package-json --stdin",
 				"fileNames": ["package.json"]
+			},
+			{
+				"associations": ["**/*.toml"],
+				"command": "run -q tombi format - --stdin-filename {{file_path}}",
+				"exts": ["toml"],
+				"cacheKeyFiles": ["tombi.toml", "bun.lock"]
 			}
 		]
 	},
