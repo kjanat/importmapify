@@ -5,6 +5,7 @@
  * biome-ignore-all lint/performance/noBarrelFile: explanation
  */
 
+import { env, stderr } from 'bun';
 import type { WriteImportMapOptions } from '#src/map';
 import { defineConfig, writeImportMap } from '#src/map';
 import lockfile from '../bun.lock' with { type: 'jsonc' };
@@ -36,9 +37,6 @@ const options: WriteImportMapOptions = defineConfig({
 	},
 });
 
-if (import.meta.main && !Bun.env['NOPE']) {
-	const output = writeImportMap(options);
-	console.log(`Wrote ${output}`);
-}
+if (import.meta.main && !env['NOPE']) stderr.write(`Wrote ${writeImportMap(options)}\n`);
 
 export default options;
