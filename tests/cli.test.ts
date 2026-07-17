@@ -75,6 +75,33 @@ describe('generateCommand', () => {
 		});
 	});
 
+	it('expands --package name=target into a conformant bare and trailing-slash pair', async () => {
+		const root = fixture({});
+		const result = await runCommand(generateCommand, [
+			'--root',
+			root,
+			'--stdout',
+			'--package',
+			'dreamcli=jsr:@kjanat/dreamcli@^3',
+		]);
+
+		expect(JSON.parse(result.stdout.join(''))).toEqual({
+			imports: {
+				dreamcli: 'jsr:@kjanat/dreamcli@^3',
+				'dreamcli/': 'jsr:/@kjanat/dreamcli@^3/',
+			},
+		});
+	});
+
+	it('restricts pattern matches to --ext extensions', async () => {
+		const root = fixture({ '#internals/*': './src/*' }, ['src/writer.ts', 'src/notes.md']);
+		const result = await runCommand(generateCommand, ['--root', root, '--stdout', '--ext', 'ts']);
+
+		expect(JSON.parse(result.stdout.join(''))).toEqual({
+			imports: { '#internals/writer.ts': './src/writer.ts' },
+		});
+	});
+
 	it('accepts repeated --scope prefix::key=value flags', async () => {
 		const root = fixture({});
 		const result = await runCommand(generateCommand, [

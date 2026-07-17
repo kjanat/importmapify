@@ -27,4 +27,4 @@ const cli = dreamcli('importmapify')
 if (import.meta.main) cli.run();
 
 export type { CreateImportMapOptions, ImportMapDocument, WriteImportMapOptions } from './map.ts';
-export { createImportMap, formatImportMap, writeImportMap } from './map.ts';
+export { createImportMap, formatImportMap, packageEntries, writeImportMap } from './map.ts';

@@ -18,12 +18,16 @@ interface CreateImportMapOptions {
 	readonly manifest?: string;
 	/** Conditional import keys to try in order. Defaults to `import`, then `default`. */
 	readonly conditions?: readonly string[];
-	/** Explicit entries merged after manifest imports, overriding duplicate keys. */
+	/** Package specifiers mapped to targets, each expanded to a conformant bare and trailing-slash pair. */
+	readonly packages?: Readonly<Record<string, string>>;
+	/** Explicit entries merged after manifest imports and packages, overriding duplicate keys. */
 	readonly additionalImports?: Readonly<Record<string, string>>;
 	/** Scope-specific import overrides keyed by scope prefix. */
 	readonly scopes?: Readonly<Record<string, Readonly<Record<string, string>>>>;
 	/** Directory against which relative targets are rebased. Defaults to {@link root}. */
 	readonly relativeTo?: string;
+	/** File extensions, with or without a leading dot, that pattern targets may match. Unset matches every file. */
+	readonly extensions?: readonly string[];
 }
 
 /** Options for creating and writing an import map. */
@@ -33,6 +37,7 @@ interface WriteImportMapOptions extends CreateImportMapOptions {
 }
 
 const DEFAULT_CONDITIONS = ['import', 'default'] as const;
+const SCHEME_PREFIX = /^(jsr|npm):(?!\/)/;
 
 function filesUnder(dir: string, prefix = ''): string[] {
 	if (!fs.existsSync(dir)) return [];
@@ -62,18 +67,54 @@ function readManifest(manifestPath: string): Readonly<Record<string, unknown>> {
 	return parsed;
 }
 
+function extensionFilter(extensions: readonly string[]): (file: string) => boolean {
+	const allowed = new Set(extensions.map((ext) => (ext.startsWith('.') ? ext : `.${ext}`)));
+	return (file) => allowed.has(path.extname(file));
+}
+
+interface ExpansionOptions {
+	readonly conditions: readonly string[];
+	readonly extensions: readonly string[];
+}
+
 function expandManifestImport(
 	root: string,
 	key: string,
 	rawValue: unknown,
-	conditions: readonly string[],
+	{ conditions, extensions }: ExpansionOptions,
 ): Readonly<Record<string, string>> {
 	const value = typeof rawValue === 'string' ? rawValue : resolveCondition(rawValue, conditions);
 	if (value === undefined) return {};
 	const pattern = parsePattern(key, value);
 	if (pattern === undefined) return { [key]: value };
 	const dir = path.join(root, pattern.targetDirectory);
-	return expandPattern(pattern, filesUnder(dir));
+	const files = filesUnder(dir);
+	return expandPattern(pattern, extensions.length > 0 ? files.filter(extensionFilter(extensions)) : files);
+}
+
+function collectAdditional(options: CreateImportMapOptions): Record<string, string> {
+	const entries: Record<string, string> = {};
+	for (const [name, target] of Object.entries(options.packages ?? {})) {
+		Object.assign(entries, packageEntries(name, target));
+	}
+	Object.assign(entries, options.additionalImports ?? {});
+	return entries;
+}
+
+function buildScopes(
+	root: string,
+	relativeTo: string,
+	rawScopes: Readonly<Record<string, Readonly<Record<string, string>>>>,
+): Record<string, Readonly<Record<string, string>>> {
+	const scopes: Record<string, Readonly<Record<string, string>>> = {};
+	for (const [scope, mappings] of Object.entries(rawScopes)) {
+		const rebasedMappings: Record<string, string> = {};
+		for (const [key, value] of Object.entries(mappings)) {
+			rebasedMappings[key] = rebaseTarget(root, relativeTo, value);
+		}
+		scopes[rebaseScopePrefix(root, relativeTo, scope)] = sortEntries(rebasedMappings);
+	}
+	return scopes;
 }
 
 function sortEntries(entries: Readonly<Record<string, string>>): Record<string, string> {
@@ -113,27 +154,21 @@ function createImportMap(options: CreateImportMapOptions): ImportMapDocument {
 	const conditions =
 		options.conditions !== undefined && options.conditions.length > 0 ? options.conditions : DEFAULT_CONDITIONS;
 	const relativeTo = options.relativeTo ?? options.root;
+	const expansion: ExpansionOptions = { conditions, extensions: options.extensions ?? [] };
 	const imports: Record<string, string> = {};
 
 	for (const [key, rawValue] of Object.entries(manifestImports)) {
-		const expanded = expandManifestImport(options.root, key, rawValue, conditions);
+		const expanded = expandManifestImport(options.root, key, rawValue, expansion);
 		for (const [specifier, target] of Object.entries(expanded)) {
 			imports[specifier] = rebaseTarget(options.root, relativeTo, target);
 		}
 	}
 
-	for (const [key, value] of Object.entries(options.additionalImports ?? {})) {
+	for (const [key, value] of Object.entries(collectAdditional(options))) {
 		imports[key] = rebaseTarget(options.root, relativeTo, value);
 	}
 
-	const scopes: Record<string, Readonly<Record<string, string>>> = {};
-	for (const [scope, mappings] of Object.entries(options.scopes ?? {})) {
-		const rebasedMappings: Record<string, string> = {};
-		for (const [key, value] of Object.entries(mappings)) {
-			rebasedMappings[key] = rebaseTarget(options.root, relativeTo, value);
-		}
-		scopes[rebaseScopePrefix(options.root, relativeTo, scope)] = sortEntries(rebasedMappings);
-	}
+	const scopes = buildScopes(options.root, relativeTo, options.scopes ?? {});
 
 	const sortedImports = sortEntries(imports);
 	const sortedScopes = Object.fromEntries(Object.entries(scopes).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)));
@@ -192,5 +227,32 @@ function writeImportMap(options: WriteImportMapOptions): string {
 	return out;
 }
 
+function directoryTarget(target: string): string {
+	const slashed = target.endsWith('/') ? target : `${target}/`;
+	return slashed.replace(SCHEME_PREFIX, '$1:/');
+}
+
+/**
+ * Build the two import map entries a package needs to resolve both itself and its subpaths.
+ *
+ * Deno's `importMap` resolution requires a trailing-slash entry for subpath imports, and a
+ * `jsr:` or `npm:` trailing-slash target only resolves in the `jsr:/` or `npm:/` form.
+ *
+ * @example
+ * ```ts
+ * import { packageEntries } from 'jsr:@kjanat/importmapify';
+ *
+ * packageEntries('@std/async', 'jsr:@std/async@^1.0.0');
+ * // { '@std/async': 'jsr:@std/async@^1.0.0', '@std/async/': 'jsr:/@std/async@^1.0.0/' }
+ * ```
+ *
+ * @param name Bare package specifier.
+ * @param target Exact target for {@link name}.
+ * @returns The bare entry and its trailing-slash subpath entry.
+ */
+function packageEntries(name: string, target: string): Record<string, string> {
+	return { [name]: target, [`${name}/`]: directoryTarget(target) };
+}
+
 export type { CreateImportMapOptions, ImportMapDocument, WriteImportMapOptions };
-export { createImportMap, formatImportMap, writeImportMap };
+export { createImportMap, formatImportMap, packageEntries, writeImportMap };

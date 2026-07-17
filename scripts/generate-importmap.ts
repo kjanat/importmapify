@@ -13,9 +13,8 @@ const output = writeImportMap({
 		'@types/bun': bunTypes,
 		bun: bunTypes,
 		'bun:test': `${bunTypes}/test.d.ts`,
-		dreamcli,
-		'dreamcli/': `${dreamcli}/`,
 	},
+	packages: { dreamcli },
 	scopes: {
 		'./tests/': {
 			'dreamcli/testkit': `${dreamcli}/testkit`,

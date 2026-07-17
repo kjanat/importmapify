@@ -28,23 +28,20 @@ describe('parsePattern', () => {
 });
 
 describe('expandPattern', () => {
-	it('emits extensionless and full-filename keys for a suffixless key pattern', () => {
+	it('emits the wildcard specifier for each matching file', () => {
 		const pattern = parsePattern('#lib/*', './src/lib/*.ts');
 		if (pattern === undefined) throw new Error('expected a pattern');
 		expect(expandPattern(pattern, ['bytes.ts', 'codecs/hex.ts', 'ignored.js'])).toEqual({
 			'#lib/bytes': './src/lib/bytes.ts',
-			'#lib/bytes.ts': './src/lib/bytes.ts',
 			'#lib/codecs/hex': './src/lib/codecs/hex.ts',
-			'#lib/codecs/hex.ts': './src/lib/codecs/hex.ts',
 		});
 	});
 
-	it('does not append the key suffix twice for a renamed key pattern', () => {
+	it('substitutes the capture into the key suffix for a renamed key pattern', () => {
 		const pattern = parsePattern('#lib/*.js', './src/lib/*.ts');
 		if (pattern === undefined) throw new Error('expected a pattern');
 		expect(expandPattern(pattern, ['bytes.ts'])).toEqual({
 			'#lib/bytes.js': './src/lib/bytes.ts',
-			'#lib/bytes.ts': './src/lib/bytes.ts',
 		});
 	});
 
@@ -59,7 +56,6 @@ describe('expandPattern', () => {
 		if (pattern === undefined) throw new Error('expected a pattern');
 		expect(expandPattern(pattern, ['prefix-bytes.ts', 'ignored.ts'])).toEqual({
 			'#lib/bytes': './src/prefix-bytes.ts',
-			'#lib/prefix-bytes.ts': './src/prefix-bytes.ts',
 		});
 	});
 
@@ -68,9 +64,7 @@ describe('expandPattern', () => {
 		if (pattern === undefined) throw new Error('expected a pattern');
 		expect(expandPattern(pattern, ['a/copy-a.ts', 'a/copy-b.ts', 'b/copy-b.ts'])).toEqual({
 			'#copy/a': './src/a/copy-a.ts',
-			'#copy/a/copy-a.ts': './src/a/copy-a.ts',
 			'#copy/b': './src/b/copy-b.ts',
-			'#copy/b/copy-b.ts': './src/b/copy-b.ts',
 		});
 	});
 });

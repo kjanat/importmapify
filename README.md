@@ -29,22 +29,24 @@ npm install importmapify
 npx importmapify --root . --out import_map.json
 ```
 
-| Flag                        | Alias | Meaning                                                           | Default             |
-| --------------------------- | ----- | ----------------------------------------------------------------- | ------------------- |
-| `--root`                    | `-r`  | Project root containing the manifest                              | current directory   |
-| `--manifest`                | `-m`  | Manifest path, relative to root                                   | `package.json`      |
-| `--out`                     | `-o`  | Output path, relative to root                                     | `import_map.json`   |
-| `--import key=value`        | `-i`  | Extra import entry; repeatable                                    | none                |
-| `--scope prefix::key=value` | `-s`  | Scoped import override; repeatable                                | none                |
-| `--condition name`          | `-c`  | Condition tried when a target is a conditional object; repeatable | `import`, `default` |
-| `--check`                   |       | Exit 1 if the output file is stale, without writing it            | off                 |
-| `--stdout`                  |       | Print the map instead of writing it                               | off                 |
+| Flag                        | Alias | Meaning                                                                   | Default             |
+| --------------------------- | ----- | ------------------------------------------------------------------------- | ------------------- |
+| `--root`                    | `-r`  | Project root containing the manifest                                      | current directory   |
+| `--manifest`                | `-m`  | Manifest path, relative to root                                           | `package.json`      |
+| `--out`                     | `-o`  | Output path, relative to root                                             | `import_map.json`   |
+| `--import key=value`        | `-i`  | Extra import entry; repeatable                                            | none                |
+| `--package name=target`     | `-p`  | Package expanded to a conformant bare and trailing-slash pair; repeatable | none                |
+| `--scope prefix::key=value` | `-s`  | Scoped import override; repeatable                                        | none                |
+| `--condition name`          | `-c`  | Condition tried when a target is a conditional object; repeatable         | `import`, `default` |
+| `--ext name`                | `-e`  | Restrict pattern matches to these file extensions; repeatable             | all files           |
+| `--check`                   |       | Exit 1 if the output file is stale, without writing it                    | off                 |
+| `--stdout`                  |       | Print the map instead of writing it                                       | off                 |
 
 Add global and test-scoped dependencies from the CLI:
 
 ```sh
 npx importmapify \
-  --import 'dreamcli=jsr:@kjanat/dreamcli@^3' \
+  --package 'dreamcli=jsr:@kjanat/dreamcli@^3' \
   --scope './tests/::dreamcli/testkit=jsr:@kjanat/dreamcli@^3/testkit'
 ```
 
@@ -69,11 +71,12 @@ const out = writeImportMap({
 });
 ```
 
-| Export            | Signature                                                | Purpose                                                        |
-| ----------------- | -------------------------------------------------------- | -------------------------------------------------------------- |
-| `createImportMap` | `(options: CreateImportMapOptions) => ImportMapDocument` | Build the import map in memory.                                |
-| `formatImportMap` | `(map: ImportMapDocument) => string`                     | Serialize to the canonical sorted, tab-indented JSON text.     |
-| `writeImportMap`  | `(options: WriteImportMapOptions) => string`             | Build, serialize, and write to disk; returns the written path. |
+| Export            | Signature                                                  | Purpose                                                                               |
+| ----------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `createImportMap` | `(options: CreateImportMapOptions) => ImportMapDocument`   | Build the import map in memory.                                                       |
+| `formatImportMap` | `(map: ImportMapDocument) => string`                       | Serialize to the canonical sorted, tab-indented JSON text.                            |
+| `writeImportMap`  | `(options: WriteImportMapOptions) => string`               | Build, serialize, and write to disk; returns the written path.                        |
+| `packageEntries`  | `(name: string, target: string) => Record<string, string>` | Build the bare and trailing-slash entry pair a package needs to resolve its subpaths. |
 
 `CreateImportMapOptions`:
 
@@ -82,9 +85,11 @@ const out = writeImportMap({
 | `root`              | Base directory for the manifest, source targets, and rebasing.                                    | required                |
 | `manifest`          | Manifest path, relative to `root`.                                                                | `package.json`          |
 | `conditions`        | Condition names tried, in order, against conditional targets (`{"import": ..., "default": ...}`). | `['import', 'default']` |
-| `additionalImports` | Extra entries merged in after manifest expansion; these win on key collision.                     | none                    |
+| `packages`          | Package specifiers mapped to targets, each expanded to a conformant bare and trailing-slash pair. | none                    |
+| `additionalImports` | Extra entries merged in after manifest expansion and packages; these win on key collision.        | none                    |
 | `scopes`            | Scope prefixes mapped to scope-specific import overrides.                                         | none                    |
 | `relativeTo`        | Directory the written targets are rebased against.                                                | `root`                  |
+| `extensions`        | File extensions, with or without a leading dot, that pattern targets may match.                   | all files               |
 
 `WriteImportMapOptions` extends the above with `out`, the output path relative to `root`. `writeImportMap` rebases
 automatically against `out`'s directory, so a nested `out` (for example `.cache/maps/import_map.json`) still produces
@@ -102,7 +107,7 @@ import { writeImportMap } from 'importmapify';
 const output = writeImportMap({
   root: new URL('..', import.meta.url).pathname,
   out: 'import_map.json',
-  additionalImports: {
+  packages: {
     dreamcli: 'jsr:@kjanat/dreamcli@^3',
   },
   scopes: {

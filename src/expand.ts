@@ -84,12 +84,10 @@ function expandPattern(pattern: Pattern, files: readonly string[]): Record<strin
 	const targetBase = pattern.targetDirectory === '.' ? './' : `${pattern.targetDirectory}/`;
 	for (const file of files) {
 		const target = `${targetBase}${file}`;
-		const match = matcher.exec(target);
-		// biome-ignore lint/suspicious/noUnnecessaryConditions: incorrect. When `: RegExpExecArray | null` is specified explicitly, lint does not fire.
+		const match: RegExpExecArray | null = matcher.exec(target);
 		const wildcard = match?.groups?.wildcard;
 		if (wildcard !== undefined) {
 			imports[`${pattern.keyPrefix}${wildcard}${pattern.keySuffix}`] = target;
-			imports[`${pattern.keyPrefix}${file}`] = target;
 		}
 	}
 	return imports;

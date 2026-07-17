@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'bun:test';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { createImportMap, formatImportMap, writeImportMap } from '#src/map.ts';
+import { createImportMap, formatImportMap, packageEntries, writeImportMap } from '#src/map.ts';
 
 const roots: string[] = [];
 const PATTERN_MISMATCH = /both sides must contain/;
@@ -24,7 +24,7 @@ function fixture(imports: Readonly<Record<string, unknown>>, files: readonly str
 }
 
 describe('createImportMap', () => {
-	it('expands matching files with extensionless and extension keys', () => {
+	it('expands matching files to their wildcard specifier', () => {
 		const root = fixture({ '#lib/*': './src/lib/*.ts' }, [
 			'src/lib/bytes.ts',
 			'src/lib/codecs/hex.ts',
@@ -33,9 +33,7 @@ describe('createImportMap', () => {
 		expect(createImportMap({ root })).toEqual({
 			imports: {
 				'#lib/bytes': './src/lib/bytes.ts',
-				'#lib/bytes.ts': './src/lib/bytes.ts',
 				'#lib/codecs/hex': './src/lib/codecs/hex.ts',
-				'#lib/codecs/hex.ts': './src/lib/codecs/hex.ts',
 			},
 		});
 	});
@@ -45,7 +43,6 @@ describe('createImportMap', () => {
 		expect(createImportMap({ root })).toEqual({
 			imports: {
 				'#lib/bytes.js': './src/lib/bytes.ts',
-				'#lib/bytes.ts': './src/lib/bytes.ts',
 			},
 		});
 	});
@@ -55,7 +52,34 @@ describe('createImportMap', () => {
 		expect(createImportMap({ root })).toEqual({
 			imports: {
 				'#lib/bytes': './src/prefix-bytes.ts',
-				'#lib/prefix-bytes.ts': './src/prefix-bytes.ts',
+			},
+		});
+	});
+
+	it('maps a suffixless target to its full filename and excludes it only via extensions', () => {
+		const files = ['src/writer.ts', 'src/parse/AGENTS.md'];
+		const root = fixture({ '#internals/*': './src/*' }, files);
+		expect(createImportMap({ root })).toEqual({
+			imports: {
+				'#internals/parse/AGENTS.md': './src/parse/AGENTS.md',
+				'#internals/writer.ts': './src/writer.ts',
+			},
+		});
+		expect(createImportMap({ root, extensions: ['ts'] })).toEqual({
+			imports: { '#internals/writer.ts': './src/writer.ts' },
+		});
+	});
+
+	it('restricts pattern matches to the given extensions with or without a leading dot', () => {
+		const root = fixture({ '#lib/*': './src/lib/*' }, [
+			'src/lib/bytes.ts',
+			'src/lib/data.json',
+			'src/lib/notes.md',
+		]);
+		expect(createImportMap({ root, extensions: ['.ts', 'json'] })).toEqual({
+			imports: {
+				'#lib/bytes.ts': './src/lib/bytes.ts',
+				'#lib/data.json': './src/lib/data.json',
 			},
 		});
 	});
@@ -94,7 +118,24 @@ describe('createImportMap', () => {
 			imports: {
 				'#config': './src/config.ts',
 				'#lib/value': './src/lib/value.ts',
-				'#lib/value.ts': './src/lib/value.ts',
+			},
+		});
+	});
+
+	it('expands packages into conformant pairs, overridden by additional imports', () => {
+		const root = fixture({});
+		expect(
+			createImportMap({
+				root,
+				packages: { '@std/async': 'jsr:@std/async@^1.0.0', chalk: 'npm:chalk@5' },
+				additionalImports: { chalk: 'npm:chalk@4' },
+			}),
+		).toEqual({
+			imports: {
+				'@std/async': 'jsr:@std/async@^1.0.0',
+				'@std/async/': 'jsr:/@std/async@^1.0.0/',
+				chalk: 'npm:chalk@4',
+				'chalk/': 'npm:/chalk@5/',
 			},
 		});
 	});
@@ -154,6 +195,33 @@ describe('createImportMap', () => {
 	it('writes an empty map when a pattern directory is missing', () => {
 		const root = fixture({ '#missing/*': './missing/*.ts' });
 		expect(createImportMap({ root })).toEqual({ imports: {} });
+	});
+});
+
+describe('packageEntries', () => {
+	it('adds the jsr scheme slash to the trailing-slash entry', () => {
+		expect(packageEntries('@std/async', 'jsr:@std/async@^1.0.0')).toEqual({
+			'@std/async': 'jsr:@std/async@^1.0.0',
+			'@std/async/': 'jsr:/@std/async@^1.0.0/',
+		});
+	});
+
+	it('adds the npm scheme slash to the trailing-slash entry', () => {
+		expect(packageEntries('chalk', 'npm:chalk@5')).toEqual({
+			chalk: 'npm:chalk@5',
+			'chalk/': 'npm:/chalk@5/',
+		});
+	});
+
+	it('leaves url and relative targets without a scheme slash', () => {
+		expect(packageEntries('virtual', 'https://example.com/virtual')).toEqual({
+			virtual: 'https://example.com/virtual',
+			'virtual/': 'https://example.com/virtual/',
+		});
+	});
+
+	it('is idempotent for an already conformant trailing-slash target', () => {
+		expect(packageEntries('@std/async', 'jsr:/@std/async@^1.0.0/')['@std/async/']).toBe('jsr:/@std/async@^1.0.0/');
 	});
 });
 
