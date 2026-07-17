@@ -40,13 +40,15 @@ jobs:
       - { uses: kjanat/runner@master }
       - { run: runner install -f }
       - { run: run -q url:npm | Add-Content -Path $env:GITHUB_OUTPUT, id: meta }
-      - run: $v=jq -r .version package.json;if ($env:GITHUB_REF_NAME -ne "v$v") { "::error file=package.json,line=3,title=Tag mismatch::Tag $env:GITHUB_REF_NAME does not match package version $v"; exit 1 }
+      - run: $v=jq -r .version package.json; if ($env:GITHUB_REF_NAME -ne "v$v") { "::error file=package.json,line=3,title=Tag mismatch::Tag $env:GITHUB_REF_NAME does not match package version $v"; exit 1 }
+      - run: '$env:NOPE=1; bun pm pack --quiet | Out-String -OutVariable tarball -NoNewline; $tarball.length -ne 0 ? ("TARBALL=$tarball" >> $env:GITHUB_ENV) : ("::error file=package.json,title=Pack failed::Failed to pack npm package" && exit 1)'
       - name: Publish to npm
-        env: { NPM_CONFIG_PROVENANCE: "${{ vars.NPM_CONFIG_PROVENANCE }}" }
+        env: { NPM_CONFIG_PROVENANCE: "${{ vars.NPM_CONFIG_PROVENANCE }}", NOPE: 1 }
         run: |
-          if (npm view "$(jq -r .name package.json)@$(jq -r .version package.json)" version 2>$null) { exit 0 }
+          $pkg = jq -c . package.json | ConvertFrom-Json
+          if (npm view ("{0}@{1}" -f $pkg.name, $pkg.version) version 2>$null) { exit 0 }
           $tag = $env:GITHUB_REF_NAME -like '*-*' ? 'beta' : 'latest'
-          bunx npm@11 publish --access public --tag $tag; exit $LASTEXITCODE
+          bun i -g ("npm@{0}" -f $pkg.volta.npm) && npm publish --access public --tag $tag $env:TARBALL
 
   jsr:
     if: startsWith(github.ref, 'refs/tags/v')

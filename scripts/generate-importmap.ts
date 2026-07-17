@@ -36,7 +36,7 @@ const options: WriteImportMapOptions = defineConfig({
 	},
 });
 
-if (import.meta.main) {
+if (import.meta.main && !Bun.env['NOPE']) {
 	const output = writeImportMap(options);
 	console.log(`Wrote ${output}`);
 }

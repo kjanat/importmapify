@@ -1,7 +1,7 @@
 [run]
-silent = true
-shell  = "bun"
 bun    = true
+shell  = "bun"
+silent = true
 
 [install]
 linker   = "hoisted"
