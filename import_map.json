@@ -10,7 +10,11 @@
 		"bun": "npm:bun-types@^1.3.14",
 		"bun:test": "npm:bun-types@^1.3.14/test.d.ts",
 		"dreamcli": "jsr:@kjanat/dreamcli@^3.0.0-rc.11",
-		"dreamcli/": "jsr:/@kjanat/dreamcli@^3.0.0-rc.11/"
+		"dreamcli/": "jsr:/@kjanat/dreamcli@^3.0.0-rc.11/",
+		"sort-package-json": "npm:sort-package-json@^4.0.0",
+		"sort-package-json/": "npm:/sort-package-json@^4.0.0/",
+		"tsdown": "npm:tsdown@^0.22.7",
+		"tsdown/": "npm:/tsdown@^0.22.7/"
 	},
 	"scopes": {
 		"./tests/": {

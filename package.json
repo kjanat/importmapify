@@ -52,9 +52,9 @@
 		"fmt": "biome check --fix 2>/dev/null; dprint fmt",
 		"jsr:publish": "bunx jsr publish --allow-dirty",
 		"lint": "biome lint",
-		"prepack": "bun --bun bd -l error && bun scripts/generate-importmap.ts",
-		"prepublishOnly": "[ -n \"${GITHUB_ACTIONS:-}\" ] || { printf '%s\\n' 'manual npm publish blocked; use release workflow for provenance' >&2; exit 1; }",
-		"runbin": "node \"$(jq -r '.bin.[]' package.json)\"",
+		"prepack": "bun --bun bd -l error",
+		"prepare": "./scripts/generate-importmap.ts",
+		"runbin": "node \"$(jq -r '.bin.importmapify' package.json)\"",
 		"test": "bun test --coverage",
 		"test:coverage": "bun test --coverage",
 		"test:smoke": "node scripts/smoke.mjs",
@@ -62,7 +62,7 @@
 		"typecheck": "bunx @typescript/native --noEmit",
 		"url:jsr": "printf 'url=https://jsr.io/%s@%s\n' \"$(jq -r '.name' deno.json)\" \"$(jq -r '.version' deno.json)\"",
 		"url:npm": "printf 'url=https://npm.im/package/%s/v/%s\n' \"$(jq -r '.name' package.json)\" \"$(jq -r '.version' package.json)\"",
-		"volta:bump": "volta pin node@latest npm@11; node --version>.node-version; bun bd"
+		"volta:bump": "volta pin node@latest npm@11; node --version>.node-version; run bd"
 	},
 	"dependencies": {
 		"dreamcli": "npm:@kjanat/dreamcli@^3.0.0-rc.11"
@@ -76,6 +76,7 @@
 		"biome": "npm:@biomejs/biome@^2.5.4",
 		"dprint": "^0.55.2",
 		"publint": "^0.3.21",
+		"runner-run": "^0.20.0",
 		"sort-package-json": "^4.0.0",
 		"tsdown": "^0.22.7",
 		"typescript": ">=6,<7",

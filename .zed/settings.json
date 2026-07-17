@@ -24,7 +24,7 @@
 				"source.fixAll.biome": true,
 				"source.organizeImports.biome": true
 			},
-			"language_servers": ["typescript", "deno", "biome", "oxlint"]
+			"language_servers": ["typescript-ls", "deno", "biome", "oxlint"]
 		},
 		"TypeScript": {
 			"wrap_guides": [115],
@@ -42,7 +42,7 @@
 				"source.fixAll.biome": true,
 				"source.organizeImports.biome": true
 			},
-			"language_servers": ["typescript", "deno", "biome", "oxlint"]
+			"language_servers": ["typescript-ls", "deno", "biome", "oxlint"]
 		},
 		"Markdown": { "wrap_guides": [120] }
 	},

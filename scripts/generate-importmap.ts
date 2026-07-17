@@ -1,24 +1,36 @@
-#!/usr/bin/env -S deno run -A --no-config
+#!/usr/bin/env bun
+/**
+ * biome-ignore-all lint/complexity/noRedundantDefaultExport: explanation
+ * biome-ignore-all lint/performance/noBarrelFile: explanation
+ */
 
-import pkg from '../package.json' with { type: 'json' };
-import { writeImportMap } from '../src/map.ts';
+import pkg from '#pkg' with { type: 'json' };
+import { type CreateImportMapOptions, writeImportMap } from '#src/map.ts';
 
-const dreamcli = pkg['dependencies']['dreamcli'].replace(/^npm:/, 'jsr:');
-const bunTypes = `npm:bun-types@${pkg['devDependencies']['@types/bun']}`;
-
-const output = writeImportMap({
+const options: CreateImportMapOptions = {
 	root: new URL('..', import.meta.url).pathname,
-	out: 'import_map.json',
 	additionalImports: {
-		'@types/bun': bunTypes,
-		bun: bunTypes,
-		'bun:test': `${bunTypes}/test.d.ts`,
+		'@types/bun': `npm:bun-types@${pkg['devDependencies']['@types/bun']}`,
+		'bun:test': `${`npm:bun-types@${pkg['devDependencies']['@types/bun']}`}/test.d.ts`,
+		bun: `npm:bun-types@${pkg['devDependencies']['@types/bun']}`,
 	},
-	packages: { dreamcli },
+	packages: {
+		'sort-package-json': `npm:sort-package-json@${pkg['devDependencies']['sort-package-json']}`,
+		dreamcli: pkg['dependencies']['dreamcli'].replace(/^npm:/, 'jsr:'),
+		tsdown: `npm:tsdown@${pkg['devDependencies']['tsdown']}`,
+	},
 	scopes: {
 		'./tests/': {
-			'dreamcli/testkit': `${dreamcli}/testkit`,
+			'dreamcli/testkit': `${pkg['dependencies']['dreamcli'].replace(/^npm:/, 'jsr:')}/testkit`,
 		},
 	},
-});
-console.log(`Wrote ${output}`);
+};
+
+if (import.meta.main) {
+	const output = writeImportMap({ ...options, out: 'import_map.json' });
+	console.log(`Wrote ${output}`);
+}
+
+export { createImportMap, writeImportMap } from '#src/map.ts';
+export { options as importmapoptions };
+export default options;

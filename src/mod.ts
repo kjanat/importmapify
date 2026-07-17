@@ -5,8 +5,9 @@
  * Use the library API to create, format, or write deterministic import maps.
  * This module also runs the `importmapify` CLI when executed directly.
  *
- * @example Create an import map from the current package.
+ * @example
  * ```ts
+ * // Create an import map from the current package.
  * import { createImportMap } from 'jsr:@kjanat/importmapify';
  *
  * const importMap = createImportMap({ root: Deno.cwd() });
@@ -15,8 +16,9 @@
  *
  * @module importmapify
  */
+
 import { cli as dreamcli } from 'dreamcli';
-import { generateCommand } from './cli.ts';
+import { generateCommand } from '#src/cli.ts';
 
 const cli = dreamcli('importmapify')
 	.manifest({ from: import.meta.url, files: ['package.json', 'deno.json'] })
@@ -26,5 +28,5 @@ const cli = dreamcli('importmapify')
 
 if (import.meta.main) cli.run();
 
-export type { CreateImportMapOptions, ImportMapDocument, WriteImportMapOptions } from './map.ts';
-export { createImportMap, formatImportMap, packageEntries, writeImportMap } from './map.ts';
+export type { CreateImportMapOptions, ImportMapDocument, WriteImportMapOptions } from '#src/map.ts';
+export { createImportMap, formatImportMap, packageEntries, writeImportMap } from '#src/map.ts';

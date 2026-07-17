@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { expandPattern, isRecord, parsePattern, rebaseTarget, resolveCondition } from './expand.ts';
+import { expandPattern, isRecord, parsePattern, rebaseTarget, resolveCondition } from '#src/expand.ts';
 
 /** A deterministic Deno import map generated from package import entries. */
 interface ImportMapDocument {
@@ -92,6 +92,43 @@ function expandManifestImport(
 	return expandPattern(pattern, extensions.length > 0 ? files.filter(extensionFilter(extensions)) : files);
 }
 
+function keyBaseLength(key: string): number {
+	const star = key.indexOf('*');
+	return star === -1 ? key.length : star + 1;
+}
+
+/**
+ * Order two manifest import keys by Node's subpath specificity: an exact key beats a pattern, a longer
+ * prefix before `*` beats a shorter one, and a longer key breaks a remaining tie. Negative means `a` wins.
+ */
+function keySpecificity(a: string, b: string): number {
+	const aExact = !a.includes('*');
+	const bExact = !b.includes('*');
+	if (aExact !== bExact) return aExact ? -1 : 1;
+	const baseDelta = keyBaseLength(b) - keyBaseLength(a);
+	return baseDelta === 0 ? b.length - a.length : baseDelta;
+}
+
+function expandManifest(
+	root: string,
+	relativeTo: string,
+	manifestImports: Readonly<Record<string, unknown>>,
+	expansion: ExpansionOptions,
+): Record<string, string> {
+	const imports: Record<string, string> = {};
+	const source: Record<string, string> = {};
+	for (const [key, rawValue] of Object.entries(manifestImports)) {
+		for (const [specifier, target] of Object.entries(expandManifestImport(root, key, rawValue, expansion))) {
+			const incumbent = source[specifier];
+			if (incumbent === undefined || keySpecificity(key, incumbent) < 0) {
+				imports[specifier] = rebaseTarget(root, relativeTo, target);
+				source[specifier] = key;
+			}
+		}
+	}
+	return imports;
+}
+
 function collectAdditional(options: CreateImportMapOptions): Record<string, string> {
 	const entries: Record<string, string> = {};
 	for (const [name, target] of Object.entries(options.packages ?? {})) {
@@ -132,8 +169,9 @@ function rebaseScopePrefix(root: string, relativeTo: string, scope: string): str
  * Pattern targets are matched against files below {@link CreateImportMapOptions.root | root}.
  * Conditional targets use the configured condition order, and additional imports are applied last.
  *
- * @example Generate entries for the current project.
+ * @example
  * ```ts
+ * // Generate entries for the current project.
  * import { createImportMap } from 'jsr:@kjanat/importmapify';
  *
  * const map = createImportMap({
@@ -155,14 +193,7 @@ function createImportMap(options: CreateImportMapOptions): ImportMapDocument {
 		options.conditions !== undefined && options.conditions.length > 0 ? options.conditions : DEFAULT_CONDITIONS;
 	const relativeTo = options.relativeTo ?? options.root;
 	const expansion: ExpansionOptions = { conditions, extensions: options.extensions ?? [] };
-	const imports: Record<string, string> = {};
-
-	for (const [key, rawValue] of Object.entries(manifestImports)) {
-		const expanded = expandManifestImport(options.root, key, rawValue, expansion);
-		for (const [specifier, target] of Object.entries(expanded)) {
-			imports[specifier] = rebaseTarget(options.root, relativeTo, target);
-		}
-	}
+	const imports = expandManifest(options.root, relativeTo, manifestImports, expansion);
 
 	for (const [key, value] of Object.entries(collectAdditional(options))) {
 		imports[key] = rebaseTarget(options.root, relativeTo, value);
@@ -180,8 +211,9 @@ function createImportMap(options: CreateImportMapOptions): ImportMapDocument {
 /**
  * Serialize an import map as stable, tab-indented JSON with a trailing newline.
  *
- * @example Format an import map for stdout.
+ * @example
  * ```ts
+ * // Format an import map for stdout.
  * import { formatImportMap } from 'jsr:@kjanat/importmapify';
  *
  * const text = formatImportMap({
@@ -203,8 +235,9 @@ function formatImportMap(map: ImportMapDocument): string {
  *
  * Relative targets are automatically rebased from the project root to the output directory.
  *
- * @example Write the conventional Deno import map file.
+ * @example
  * ```ts
+ * // Write the conventional Deno import map file.
  * import { writeImportMap } from 'jsr:@kjanat/importmapify';
  *
  * const output = writeImportMap({

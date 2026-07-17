@@ -109,6 +109,22 @@ describe('createImportMap', () => {
 		expect(() => createImportMap({ root })).toThrow(PATTERN_MISMATCH);
 	});
 
+	it('resolves same-key collisions by pattern specificity, independent of declaration order', () => {
+		const files = ['src/foo/bar.ts', 'lib/bar.ts'];
+		const broadFirst = fixture({ '#*': './src/*.ts', '#foo/*': './lib/*.ts' }, files);
+		const specificFirst = fixture({ '#foo/*': './lib/*.ts', '#*': './src/*.ts' }, files);
+		expect(createImportMap({ root: broadFirst }).imports['#foo/bar']).toBe('./lib/bar.ts');
+		expect(createImportMap({ root: specificFirst }).imports['#foo/bar']).toBe('./lib/bar.ts');
+	});
+
+	it('prefers an exact key over a pattern matching the same specifier, independent of order', () => {
+		const files = ['lib/bar.ts', 'exact.ts'];
+		const exactFirst = fixture({ '#foo/bar': './exact.ts', '#foo/*': './lib/*.ts' }, files);
+		const patternFirst = fixture({ '#foo/*': './lib/*.ts', '#foo/bar': './exact.ts' }, files);
+		expect(createImportMap({ root: exactFirst }).imports['#foo/bar']).toBe('./exact.ts');
+		expect(createImportMap({ root: patternFirst }).imports['#foo/bar']).toBe('./exact.ts');
+	});
+
 	it('combines exact and pattern entries', () => {
 		const root = fixture({ '#config': './src/config.ts', '#lib/*': './src/lib/*.ts' }, [
 			'src/config.ts',

@@ -185,7 +185,9 @@ real filename: `#lib/bytes.js` and `#lib/bytes.ts`, both pointing at `./src/lib/
   missing directory produces no entries.
 - Relative targets (`./...`, `../...`) are rebased against `relativeTo`. Bare specifiers, `npm:`/`jsr:`/`node:`
   specifiers, and absolute URLs pass through unchanged.
-- If exact and expanded entries produce the same key, the later manifest entry wins.
+- When two manifest entries produce the same key, the more specific one wins, matching Node's subpath resolution: an
+  exact key beats a pattern, and a longer prefix before `*` beats a shorter one. Declaration order does not matter.
+  `additionalImports` and `packages` still override manifest entries.
 - Relative scope prefixes and targets are rebased against `relativeTo`; trailing scope slashes are preserved.
 - Import entries, scope prefixes, and scoped entries are sorted by UTF-16 code unit for stable diffs.
 

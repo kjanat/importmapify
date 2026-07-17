@@ -3,7 +3,7 @@ import { dirname, join } from 'node:path';
 import { cwd } from 'node:process';
 import type { AnyCommandBuilder } from 'dreamcli';
 import { CLIError, command, flag } from 'dreamcli';
-import { createImportMap, formatImportMap, writeImportMap } from './map.ts';
+import { createImportMap, formatImportMap, writeImportMap } from '#src/map.ts';
 
 function parseKeyValue(raw: string, flagName: string, code: string): readonly [string, string] {
 	const eq = raw.indexOf('=');

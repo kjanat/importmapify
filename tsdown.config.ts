@@ -3,13 +3,14 @@ import fs from 'node:fs/promises';
 import { URL } from 'node:url';
 import { sortPackageJson } from 'sort-package-json';
 import { defineConfig } from 'tsdown';
-import pkg from './package.json' with { type: 'json' };
+import pkg from '#pkg' with { type: 'json' };
+import { importmapoptions, writeImportMap } from './scripts/generate-importmap.ts';
 
-const JS_EXTENSION_PATTERN = /\.([cm]?)js$/;
+const entry = './src/mod.ts';
 const JSR_SCOPE = '@kjanat';
 
 export default defineConfig({
-	entry: 'src/mod.ts',
+	entry,
 	format: 'esm',
 	clean: true,
 	platform: 'node',
@@ -24,10 +25,15 @@ export default defineConfig({
 	exports: {
 		bin: true,
 		async customExports(exports) {
+			const jsToDts = {
+				// biome-ignore lint/performance/useTopLevelRegex: explanation
+				from: /\.(?<prefix>c|m)?js$/,
+				to: '.d.$<prefix>ts',
+			};
 			await Promise.all(
 				Object.entries(exports).map(async ([key, value]) => {
 					if (typeof value !== 'string') return;
-					const types = value.replace(JS_EXTENSION_PATTERN, '.d.$1ts');
+					const types = value.replace(jsToDts.from, jsToDts.to);
 					if (types === value) return;
 					const exists = await fs.access(types).then(
 						() => true,
@@ -41,7 +47,7 @@ export default defineConfig({
 		},
 	},
 	hooks: {
-		'build:done': async ({ options }) => {
+		'build:done': async ({ options }): Promise<void> => {
 			if (options.watch) return;
 			const packagePath = new URL('./package.json', import.meta.url);
 			const contents = await fs.readFile(packagePath, { encoding: 'utf8' });
@@ -59,7 +65,7 @@ export default defineConfig({
 				...denoConfig,
 				name: pkg.name.startsWith('@') ? pkg.name : `${JSR_SCOPE}/${pkg.name}`,
 				version: pkg.version,
-				exports: './src/mod.ts',
+				exports: entry,
 				publish: {
 					include: [
 						'./src/**/*.ts',
@@ -78,7 +84,8 @@ export default defineConfig({
 			await fs.writeFile(denoPath, `${JSON.stringify(deno, null, '\t')}\n`, {
 				encoding: 'utf8',
 			});
-			execFileSync('dprint', ['fmt', 'deno.json'], { stdio: 'inherit' });
+			execFileSync('dprint', ['fmt'], { stdio: 'inherit' });
+			writeImportMap({ ...importmapoptions, out: 'import_map.json' });
 		},
 	},
 });
