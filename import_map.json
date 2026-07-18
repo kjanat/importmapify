@@ -3,6 +3,7 @@
 		"#deno": "./deno.json",
 		"#pkg": "./package.json",
 		"#src/cli": "./src/cli.ts",
+		"#src/config": "./src/config.ts",
 		"#src/expand": "./src/expand.ts",
 		"#src/map": "./src/map.ts",
 		"#src/mod": "./src/mod.ts",

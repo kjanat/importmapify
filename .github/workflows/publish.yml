@@ -25,6 +25,8 @@ jobs:
       - uses: kjanat/runner@master
       - run: runner install -qsf build typecheck check test:coverage test:smoke scripts/smoke.mjs
       - run: node --run runbin -- --help
+      - name: Validate JSR publish (blocks npm on failure)
+        run: deno publish --config deno.json --allow-dirty --dry-run
 
   npm:
     if: startsWith(github.ref, 'refs/tags/v')
@@ -52,7 +54,7 @@ jobs:
 
   jsr:
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: npm
+    needs: test
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions: { contents: read, id-token: write }

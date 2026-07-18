@@ -51,6 +51,7 @@
 	"lock": false,
 	"jsrDepsInNodeModules": false,
 	"minimumDependencyAge": {
+		"age": 0,
 		"exclude": ["jsr:@kjanat/*", "npm:@kjanat/*"]
 	}
 }

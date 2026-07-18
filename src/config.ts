@@ -1,8 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { isRecord } from '#src/expand.ts';
-import type { WriteImportMapOptions } from '#src/map.ts';
+import { isRecord } from '#src/expand';
+import type { WriteImportMapOptions } from '#src/map';
 
 const CONFIG_BASENAMES = ['importmapify.config', '.importmapify'] as const;
 const CONFIG_EXTENSIONS = ['mjs', 'cjs', 'js', 'ts', 'mts', 'cts'] as const;
