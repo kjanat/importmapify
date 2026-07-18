@@ -1,3 +1,2 @@
-* text=auto eol=lf
-*.ts linguist-language=TypeScript
-
+*          text=auto eol=lf
+src/mod.ts linguist-language=TypeScript
