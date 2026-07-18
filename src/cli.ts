@@ -3,6 +3,8 @@ import { dirname } from 'node:path';
 import { cwd } from 'node:process';
 import type { AnyCommandBuilder } from 'dreamcli';
 import { CLIError, command, flag } from 'dreamcli';
+import { configToOptions, discoverConfig, loadConfig, mergeScopes } from '#src/config';
+import type { WriteImportMapOptions } from '#src/map';
 import { createImportMap, DEFAULT_OUT, formatImportMap, resolveOut, writeImportMap } from '#src/map';
 
 function parseKeyValue(raw: string, flagName: string, code: string): readonly [string, string] {
@@ -43,6 +45,90 @@ function buildScopes(raws: readonly string[]): Record<string, Record<string, str
 		else mappings[key] = value;
 	}
 	return scopes;
+}
+
+interface GenerateFlags {
+	readonly root: string;
+	readonly manifest: string;
+	readonly out: string;
+	readonly condition?: readonly string[] | undefined;
+	readonly import?: readonly string[] | undefined;
+	readonly package?: readonly string[] | undefined;
+	readonly ext?: readonly string[] | undefined;
+	readonly scope?: readonly string[] | undefined;
+	readonly config?: string | undefined;
+	readonly 'no-config'?: boolean | undefined;
+}
+
+async function loadConfigOptions(
+	searchRoot: string,
+	configFlag: string | undefined,
+	noConfig: boolean,
+): Promise<Partial<WriteImportMapOptions>> {
+	if (noConfig) return {};
+	const file = configFlag ?? discoverConfig(searchRoot);
+	if (file === undefined) return {};
+	if (!existsSync(file)) {
+		throw new CLIError(`Config file not found: ${file}`, { code: 'config-not-found', exitCode: 2 });
+	}
+	try {
+		return configToOptions(await loadConfig(file), dirname(file));
+	} catch (cause) {
+		throw new CLIError(cause instanceof Error ? cause.message : `Cannot load config at ${file}`, {
+			code: 'config-load-failed',
+			exitCode: 2,
+			cause,
+		});
+	}
+}
+
+/** Explicitly-passed flag value wins; otherwise the config value, otherwise the flag default. */
+function preferExplicit<T extends string | URL>(
+	explicit: boolean,
+	flagValue: string,
+	configValue: T | undefined,
+): string | T {
+	return explicit ? flagValue : (configValue ?? flagValue);
+}
+
+/** A non-empty flag array wins over the config value. */
+function preferArray(
+	flagValue: readonly string[] | undefined,
+	configValue: readonly string[] | undefined,
+): readonly string[] | undefined {
+	return flagValue !== undefined && flagValue.length > 0 ? flagValue : configValue;
+}
+
+/** Resolve final import map options by layering explicit flags over a discovered config over defaults. */
+async function resolveGenerateOptions(flags: GenerateFlags): Promise<WriteImportMapOptions> {
+	const base = await loadConfigOptions(flags.root, flags.config, flags['no-config'] ?? false);
+	const conditions = preferArray(flags.condition, base.conditions);
+	const extensions = preferArray(flags.ext, base.extensions);
+	const options: {
+		root: string | URL;
+		manifest: string;
+		out: string | URL;
+		relativeTo?: string | URL;
+		conditions?: readonly string[];
+		extensions?: readonly string[];
+		packages: Record<string, string>;
+		additionalImports: Record<string, string>;
+		scopes: Record<string, Record<string, string>>;
+	} = {
+		root: preferExplicit(flags.root !== cwd(), flags.root, base.root),
+		manifest: preferExplicit(flags.manifest !== 'package.json', flags.manifest, base.manifest),
+		out: preferExplicit(flags.out !== DEFAULT_OUT, flags.out, base.out),
+		packages: { ...base.packages, ...parseEntries(flags.package ?? [], 'package', 'invalid-package-flag') },
+		additionalImports: {
+			...base.additionalImports,
+			...parseEntries(flags.import ?? [], 'import', 'invalid-import-flag'),
+		},
+		scopes: mergeScopes(base.scopes, buildScopes(flags.scope ?? [])),
+	};
+	if (base.relativeTo !== undefined) options.relativeTo = base.relativeTo;
+	if (conditions !== undefined) options.conditions = conditions;
+	if (extensions !== undefined) options.extensions = extensions;
+	return options;
 }
 
 /** DreamCLI command that writes, checks, or prints an expanded Deno import map. */
@@ -91,6 +177,8 @@ export const generateCommand: AnyCommandBuilder = command('generate')
 			.describe('Condition to try when a target is a conditional object. Repeatable.')
 			.alias('c'),
 	)
+	.flag('config', flag.string().describe('Config file path; skips discovery.').alias('C'))
+	.flag('no-config', flag.boolean().describe('Skip config file discovery.'))
 	.flag('check', flag.boolean().describe('Exit 1 if the output file is stale instead of writing it.'))
 	.flag('stdout', flag.boolean().describe('Print the import map to stdout instead of writing it.'))
 	.example('importmapify --stdout', 'Print the generated import map')
@@ -99,20 +187,9 @@ export const generateCommand: AnyCommandBuilder = command('generate')
 		'Add global and test-scoped dependencies',
 	)
 	.example('importmapify --check', 'Fail when the generated file is stale')
-	.action(({ flags, out }) => {
+	.action(async ({ flags, out }) => {
 		const { log, error, setExitCode } = out;
-		const {
-			check,
-			stdout,
-			root,
-			manifest,
-			condition: cdts,
-			out: of,
-			import: imf,
-			package: pkf,
-			ext: exf,
-			scope: scf,
-		} = flags;
+		const { check, stdout } = flags;
 
 		if (check && stdout) {
 			throw new CLIError('--check and --stdout are mutually exclusive', {
@@ -121,29 +198,17 @@ export const generateCommand: AnyCommandBuilder = command('generate')
 			});
 		}
 
-		const outPath = resolveOut(root, of);
-		const relativeTo = dirname(outPath);
-		const packages = parseEntries(pkf ?? [], 'package', 'invalid-package-flag');
-		const additionalImports = parseEntries(imf ?? [], 'import', 'invalid-import-flag');
-		const scopes = buildScopes(scf ?? []);
-		const options = {
-			root,
-			manifest,
-			conditions: cdts,
-			packages,
-			additionalImports,
-			scopes,
-			relativeTo,
-			extensions: exf,
-		};
+		const options = await resolveGenerateOptions(flags);
+		const outPath = resolveOut(options.root, options.out ?? DEFAULT_OUT);
+		const createOptions = { ...options, relativeTo: options.relativeTo ?? dirname(outPath) };
 
 		if (stdout) {
-			log(formatImportMap(createImportMap(options)));
+			log(formatImportMap(createImportMap(createOptions)));
 			return;
 		}
 
 		if (check) {
-			const expected = formatImportMap(createImportMap(options));
+			const expected = formatImportMap(createImportMap(createOptions));
 			const actual = existsSync(outPath) ? readFileSync(outPath, 'utf8') : undefined;
 			if (actual !== expected) {
 				error(`${outPath} is stale`);
@@ -154,6 +219,6 @@ export const generateCommand: AnyCommandBuilder = command('generate')
 			return;
 		}
 
-		const written = writeImportMap({ ...options, out: of });
+		const written = writeImportMap(options);
 		log(`Wrote ${written}`);
 	});

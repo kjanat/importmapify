@@ -1,6 +1,6 @@
 {
 	"name": "importmapify",
-	"version": "1.1.1",
+	"version": "1.2.0",
 	"description": "Expand package.json subpath-pattern imports into explicit Deno import map entries.",
 	"keywords": [
 		"deno",

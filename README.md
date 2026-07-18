@@ -39,6 +39,8 @@ npx importmapify --root . --out import_map.json
 | `--scope prefix::key=value` | `-s`  | Scoped import override; repeatable                                        | none                |
 | `--condition name`          | `-c`  | Condition tried when a target is a conditional object; repeatable         | `import`, `default` |
 | `--ext name`                | `-e`  | Restrict pattern matches to these file extensions; repeatable             | all files           |
+| `--config path`             | `-C`  | Config file path; skips discovery                                         | auto-discovered     |
+| `--no-config`               |       | Skip config file discovery                                                | off                 |
 | `--check`                   |       | Exit 1 if the output file is stale, without writing it                    | off                 |
 | `--stdout`                  |       | Print the map instead of writing it                                       | off                 |
 
@@ -51,6 +53,28 @@ npx importmapify \
 ```
 
 Run `npx importmapify --help` for the full reference, or `npx importmapify --completions bash` for shell completions.
+
+### Config file
+
+The CLI auto-discovers a config file in the project root and uses its default export as the base options. Discovery
+order (first match wins): `importmapify.config.{mjs,cjs,js,ts,mts,cts}`, then `.importmapify.{mjs,cjs,js,ts,mts,cts}`.
+
+```js
+// importmapify.config.mjs
+export default {
+	packages: { dreamcli: 'jsr:@kjanat/dreamcli@^3' },
+	extensions: ['ts'],
+};
+```
+
+Then `npx importmapify` reads it automatically. Point at a specific file with `--config <path>`, or skip discovery with
+`--no-config`.
+
+Explicitly-passed flags override the config, which overrides built-in defaults: `--import`/`--package`/`--scope` merge
+onto the config's records with flag keys winning; `--condition`/`--ext` replace; `--root`/`--manifest`/`--out` win when
+passed. Configs are imported natively; a TypeScript config needs a runtime that strips types (Bun, Deno, or Node
+
+> = 22.6), so on older Node use a `.mjs`/`.cjs`/`.js` config.
 
 ## Library
 
