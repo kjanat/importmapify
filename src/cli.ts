@@ -5,11 +5,13 @@ import { bold, cyan } from 'ansispeck';
 import type { AnyCommandBuilder } from 'dreamcli';
 import { CLIError, command, flag } from 'dreamcli';
 import { configToOptions, discoverConfig, loadConfig, mergeScopes } from '#src/config';
-import type { Config, HookContext, WriteImportMapOptions } from '#src/map';
-import { createImportMap, DEFAULT_OUT, formatImportMap, resolveOut, toPath } from '#src/map';
+import { DEFAULT_OUT, createImportMap, formatImportMap, resolveOut, toPath } from '#src/map';
+import type { Config, HookContext, PathOrUrl, TargetFilter, WriteImportMapOptions } from '#src/types';
 
 const EXAMPLE_TOKEN = /(?:'[^']*'|"[^"]*"|\S)+/g;
-const JSON_MODE = argv.includes('--json');
+const SPACE_COUNT = /^\d+$/;
+const FLAG_ARGS = argv.includes('--') ? argv.slice(0, argv.indexOf('--')) : argv;
+const JSON_MODE = FLAG_ARGS.includes('--json');
 
 // dreamcli renders example commands unstyled (kjanat/dreamcli#65); styling is baked in here, so skip
 // it under --json to keep the serialized schema free of escape codes.
@@ -66,10 +68,12 @@ interface GenerateFlags {
 	readonly root: string;
 	readonly manifest: string;
 	readonly out: string;
+	readonly indent?: string | undefined;
 	readonly condition?: readonly string[] | undefined;
 	readonly import?: readonly string[] | undefined;
 	readonly package?: readonly string[] | undefined;
 	readonly ext?: readonly string[] | undefined;
+	readonly filter?: readonly string[] | undefined;
 	readonly scope?: readonly string[] | undefined;
 	readonly config?: string | undefined;
 	readonly 'no-config'?: boolean | undefined;
@@ -98,7 +102,7 @@ async function loadConfigOptions(
 }
 
 /** Explicitly-passed flag value wins; otherwise the config value, otherwise the flag default. */
-function preferExplicit<T extends string | URL>(
+function preferExplicit<T extends PathOrUrl>(
 	explicit: boolean,
 	flagValue: string,
 	configValue: T | undefined,
@@ -107,11 +111,34 @@ function preferExplicit<T extends string | URL>(
 }
 
 /** A non-empty flag array wins over the config value. */
-function preferArray(
-	flagValue: readonly string[] | undefined,
-	configValue: readonly string[] | undefined,
-): readonly string[] | undefined {
+function preferArray<T>(
+	flagValue: readonly T[] | undefined,
+	configValue: readonly T[] | undefined,
+): readonly T[] | undefined {
 	return flagValue !== undefined && flagValue.length > 0 ? flagValue : configValue;
+}
+
+function parseIndent(raw: string): string | number {
+	if (raw === 'tab') return '\t';
+	if (SPACE_COUNT.test(raw)) return Number(raw);
+	throw new CLIError(`--indent expects a number of spaces or "tab", got "${raw}"`, {
+		code: 'invalid-indent-flag',
+		exitCode: 2,
+	});
+}
+
+function compileFilters(raws: readonly string[]): readonly RegExp[] {
+	return raws.map((raw) => {
+		try {
+			return new RegExp(raw);
+		} catch (cause) {
+			throw new CLIError(`--filter expects a valid regular expression, got "${raw}"`, {
+				code: 'invalid-filter-flag',
+				exitCode: 2,
+				cause,
+			});
+		}
+	});
 }
 
 /** Resolved import map options with the config hooks the CLI runs around generation. */
@@ -122,13 +149,20 @@ async function resolveGenerateOptions(flags: GenerateFlags): Promise<ResolvedGen
 	const base = await loadConfigOptions(flags.root, flags.config, flags['no-config'] ?? false);
 	const conditions = preferArray(flags.condition, base.conditions);
 	const extensions = preferArray(flags.ext, base.extensions);
+	const filter = preferArray<TargetFilter>(
+		flags.filter === undefined ? undefined : compileFilters(flags.filter),
+		base.filter,
+	);
+	const indent = flags.indent === undefined ? base.indent : parseIndent(flags.indent);
 	const options: {
-		root: string | URL;
+		root: PathOrUrl;
 		manifest: string;
-		out: string | URL;
-		relativeTo?: string | URL;
+		out: PathOrUrl;
+		indent?: string | number;
+		relativeTo?: PathOrUrl;
 		conditions?: readonly string[];
 		extensions?: readonly string[];
+		filter?: readonly TargetFilter[];
 		packages: Record<string, string>;
 		additionalImports: Record<string, string>;
 		scopes: Record<string, Record<string, string>>;
@@ -145,8 +179,10 @@ async function resolveGenerateOptions(flags: GenerateFlags): Promise<ResolvedGen
 		scopes: mergeScopes(base.scopes, buildScopes(flags.scope ?? [])),
 	};
 	if (base.relativeTo !== undefined) options.relativeTo = base.relativeTo;
+	if (indent !== undefined) options.indent = indent;
 	if (conditions !== undefined) options.conditions = conditions;
 	if (extensions !== undefined) options.extensions = extensions;
+	if (filter !== undefined) options.filter = filter;
 	if (base.hooks !== undefined) options.hooks = base.hooks;
 	return options;
 }
@@ -171,6 +207,7 @@ export const generateCommand: AnyCommandBuilder = command('generate')
 			.describe('Output path resolved against root; relative, absolute, or file:// URL.')
 			.alias('o'),
 	)
+	.flag('indent', flag.string().describe('Indentation as a number of spaces or the word "tab".'))
 	.flag(
 		'import',
 		flag.array(flag.string()).describe('Additional import entry as key=value. Repeatable.').alias('i'),
@@ -188,6 +225,13 @@ export const generateCommand: AnyCommandBuilder = command('generate')
 			.array(flag.string())
 			.describe('Restrict pattern matches to these file extensions. Repeatable.')
 			.alias('e'),
+	)
+	.flag(
+		'filter',
+		flag
+			.array(flag.string())
+			.describe('Regular expression a pattern target path must match. Repeatable.')
+			.alias('f'),
 	)
 	.flag('scope', flag.array(flag.string()).describe('Scoped import as prefix::key=value. Repeatable.').alias('s'))
 	.flag(
@@ -229,7 +273,7 @@ export const generateCommand: AnyCommandBuilder = command('generate')
 		await options.hooks?.['generate:before']?.(hookContext);
 
 		const map = createImportMap(createOptions);
-		const text = formatImportMap(map);
+		const text = formatImportMap(map, options.indent);
 
 		if (stdout) {
 			log(text);

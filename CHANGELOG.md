@@ -1,0 +1,129 @@
+# Changelog
+
+All notable changes to this project are documented here. The format follows
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project adheres to
+[Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [1.5.0] - 2026-07-18
+
+### Added
+
+- `filter` option (`--filter` / `-f` on the CLI) taking `RegExp` or predicate matchers tested against each candidate
+  pattern target path. A target is kept only when every matcher accepts it; combines with `extensions`. Drops hashed
+  build chunks a `dist/*` pattern would otherwise enumerate.
+- `indent` option (`--indent` on the CLI, `JSON.stringify` space semantics) controlling output indentation; the default
+  stays a tab.
+- `TargetFilter` and `PathOrUrl` exported types.
+- `@example` and `@defaultValue` JSDoc on every public type and member, with links to the Import Maps Standard and
+  Deno's import-map documentation.
+- This changelog.
+
+### Changed
+
+- Public types moved to `src/types.ts`; the package entry re-exports them unchanged.
+- `--json` detection ignores arguments after a `--` separator.
+- Clarified the `relativeTo` documentation.
+
+## [1.4.0] - 2026-07-18
+
+### Added
+
+- Config hooks, modeled on tsdown's hooks. A config file can declare lifecycle functions the CLI runs around generation:
+  `generate:before(ctx)` runs before the filesystem is scanned, so a build step there populates pattern targets;
+  `generate:done(ctx)` runs after the map is emitted, receiving the finished document. Each hook may be async and
+  receives `{ root, out }`. The synchronous library functions ignore hooks.
+
+### Changed
+
+- `Config` is now `Partial<WriteImportMapOptions>` with an optional `hooks` field, so a config file can omit `root`. An
+  omitted `root` defaults to the config file's own directory; the CLI supplies the remaining defaults.
+
+## [1.3.1] - 2026-07-18
+
+### Added
+
+- `Config` type alias for `WriteImportMapOptions`, so a config export can be typed as `import('importmapify').Config`.
+
+### Fixed
+
+- `--json` help no longer leaks ANSI escapes into the emitted schema. Example commands are styled for human help but
+  left raw when `--json` is present.
+
+## [1.3.0] - 2026-07-18
+
+### Added
+
+- `--quiet` / `-q` flag.
+- Colorized help examples (binary bold, flags cyan) via ansispeck, now a direct dependency.
+- `NO_HYPERLINKS` honored in `--help`, with the header name and version kept underlined once the clickable link is gone.
+
+### Changed
+
+- The `Wrote <path>` and `up to date` confirmations write to stderr, keeping stdout clean for piping.
+
+## [1.2.0] - 2026-07-18
+
+### Added
+
+- CLI config file support. Auto-discovers `importmapify.config.*` / `.importmapify.*` in the project root and merges its
+  default export beneath explicit flags. Adds `--config <path>` and `--no-config`. Configs load via native `import()`,
+  so a TypeScript config needs a type-stripping runtime (Bun, Deno, or Node >= 22.6).
+
+### Fixed
+
+- A JSR type-check failure now blocks the npm publish.
+
+## [1.1.1] - 2026-07-18
+
+### Changed
+
+- Diagnostic logs go to stderr instead of `console`.
+
+## [1.1.0] - 2026-07-17
+
+### Added
+
+- `packages` option and `packageEntries()`, emitting the bare and trailing-slash pair Deno needs in the required `jsr:/`
+  / `npm:/` form.
+- `extensions` filter, `defineConfig()` helper, and an optional `out` (defaults to `import_map.json`) accepting a
+  relative path, absolute path, or `file://` URL. `root` and `relativeTo` accept `file://` too.
+
+### Changed
+
+- Node-accurate expansion: drops invalid full-filename keys and resolves same-key collisions by subpath specificity
+  (exact beats a pattern, longer prefix wins), independent of declaration order.
+
+## [1.0.1] - 2026-07-15
+
+### Changed
+
+- Registry metadata in `package.json` and `deno.json`. No functional changes.
+
+## [1.0.0] - 2026-07-15
+
+### Added
+
+- First stable release, published to both npm (`importmapify`) and JSR (`@kjanat/importmapify`).
+- Scoped imports and native Deno config support.
+- Documented Deno import-map workflows.
+
+## [0.1.0] - 2026-07-15
+
+### Added
+
+- Initial release. Expands `package.json` subpath-pattern imports (e.g. `#lib/*` to `./src/lib/*.ts`) into the explicit,
+  deterministically-sorted entries a Deno import map needs, so `deno doc`, `deno check`, and the Deno LSP can resolve
+  Node-style subpath imports. Ships as both a library and a CLI.
+
+[1.5.0]: https://github.com/kjanat/importmapify/compare/v1.4.0...v1.5.0
+[1.4.0]: https://github.com/kjanat/importmapify/compare/v1.3.1...v1.4.0
+[1.3.1]: https://github.com/kjanat/importmapify/compare/v1.3.0...v1.3.1
+[1.3.0]: https://github.com/kjanat/importmapify/compare/v1.2.0...v1.3.0
+[1.2.0]: https://github.com/kjanat/importmapify/compare/v1.1.1...v1.2.0
+[1.1.1]: https://github.com/kjanat/importmapify/compare/v1.1.0...v1.1.1
+[1.1.0]: https://github.com/kjanat/importmapify/compare/v1.0.1...v1.1.0
+[1.0.1]: https://github.com/kjanat/importmapify/compare/v1.0.0...v1.0.1
+[1.0.0]: https://github.com/kjanat/importmapify/compare/v0.1.0...v1.0.0
+[0.1.0]: https://github.com/kjanat/importmapify/commits/v0.1.0
+
+<!-- markdownlint-disable-file MD024 -->

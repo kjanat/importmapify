@@ -1,7 +1,7 @@
-import { afterEach, describe, expect, it } from 'bun:test';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { afterEach, describe, expect, it } from 'bun:test';
 import { createImportMap, defineConfig, formatImportMap } from '#src/map.ts';
 
 const roots: string[] = [];
@@ -86,6 +86,27 @@ describe('createImportMap', () => {
 				'#lib/bytes.ts': './src/lib/bytes.ts',
 				'#lib/data.json': './src/lib/data.json',
 			},
+		});
+	});
+
+	it('drops targets rejected by a filter RegExp', () => {
+		const root = fixture({ '#dist/*': './dist/*.js' }, ['dist/auto.js', 'dist/internal-qo9O8jzH.js']);
+		expect(createImportMap({ root, filter: [/^(?!.*internal)/] })).toEqual({
+			imports: { '#dist/auto': './dist/auto.js' },
+		});
+	});
+
+	it('keeps only targets a filter predicate accepts', () => {
+		const root = fixture({ '#dist/*': './dist/*.js' }, ['dist/auto.js', 'dist/raw.js']);
+		expect(createImportMap({ root, filter: [(target) => target.endsWith('auto.js')] })).toEqual({
+			imports: { '#dist/auto': './dist/auto.js' },
+		});
+	});
+
+	it('requires the extension whitelist and every filter to pass', () => {
+		const root = fixture({ '#dist/*': './dist/*' }, ['dist/keep.js', 'dist/keep.ts', 'dist/skip.js']);
+		expect(createImportMap({ root, extensions: ['js'], filter: [/keep/] })).toEqual({
+			imports: { '#dist/keep.js': './dist/keep.js' },
 		});
 	});
 
@@ -252,5 +273,12 @@ describe('formatImportMap', () => {
 
 		expect(formatImportMap(firstMap)).toBe(expected);
 		expect(formatImportMap(secondMap)).toBe(expected);
+	});
+
+	it('serializes with a custom indent using JSON.stringify space semantics', () => {
+		const map = { imports: { '#a': './a.ts' } };
+		expect(formatImportMap(map, 2)).toBe('{\n  "imports": {\n    "#a": "./a.ts"\n  }\n}\n');
+		expect(formatImportMap(map, '    ')).toBe('{\n    "imports": {\n        "#a": "./a.ts"\n    }\n}\n');
+		expect(formatImportMap(map, 0)).toBe('{"imports":{"#a":"./a.ts"}}\n');
 	});
 });

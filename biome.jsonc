@@ -49,7 +49,18 @@
 	"assist": {
 		"enabled": true,
 		"actions": {
-			"source": { "organizeImports": "on" }
+			"source": {
+				"preset": "recommended",
+				"organizeImports": {
+					"options": {
+						"groups": [":NODE:", ":BUN:", ":PACKAGE:", ":ALIAS:", ":PATH:"],
+						"identifierOrder": "lexicographic",
+						"sortBareImports": false
+					},
+					"level": "on"
+				},
+				"useSortedInterfaceMembers": "off"
+			}
 		}
 	},
 	"overrides": [
@@ -70,6 +81,7 @@
 			"linter": {
 				"rules": {
 					"complexity": { "noExcessiveLinesPerFunction": "off" },
+					"performance": { "useTopLevelRegex": "off" },
 					"style": { "noMagicNumbers": "off" }
 				}
 			}

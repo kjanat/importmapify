@@ -1,8 +1,8 @@
-import { afterEach, describe, expect, it } from 'bun:test';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import process from 'node:process';
+import { afterEach, describe, expect, it } from 'bun:test';
 import { configToOptions, discoverConfig, loadConfig, mergeScopes } from '#src/config.ts';
 
 const dirs: string[] = [];
@@ -112,6 +112,25 @@ describe('configToOptions', () => {
 		const url = new URL('file:///abs/root/');
 		expect(configToOptions({ root: '/abs/root' }, '/repo').root).toBe('/abs/root');
 		expect(configToOptions({ root: url }, '/repo').root).toBe(url);
+	});
+
+	it('reads indent as a string or number and drops other types', () => {
+		expect(configToOptions({ indent: 2 }, '/repo').indent).toBe(2);
+		expect(configToOptions({ indent: '\t' }, '/repo').indent).toBe('\t');
+		expect(configToOptions({ indent: true }, '/repo').indent).toBeUndefined();
+	});
+
+	it('reads filter entries as RegExps and predicates', () => {
+		const predicate = (target: string) => target.endsWith('.ts');
+		const result = configToOptions({ filter: [/internal/, predicate] }, '/repo');
+		expect(result.filter).toEqual([/internal/, predicate]);
+	});
+
+	it('drops extensions and filter values of the wrong shape', () => {
+		expect(configToOptions({ extensions: 'ts' }, '/repo').extensions).toBeUndefined();
+		expect(configToOptions({ extensions: [/internal/] }, '/repo').extensions).toBeUndefined();
+		expect(configToOptions({ filter: ['ts'] }, '/repo').filter).toBeUndefined();
+		expect(configToOptions({ filter: /internal/ }, '/repo').filter).toBeUndefined();
 	});
 
 	it('keeps function hooks and drops non-function entries', () => {

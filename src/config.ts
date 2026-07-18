@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { isRecord } from '#src/expand';
-import type { Config, ImportMapHooks, WriteImportMapOptions } from '#src/map';
+import type { Config, ImportMapHooks, PathOrUrl, TargetFilter, WriteImportMapOptions } from '#src/types';
 
 const CONFIG_BASENAMES = ['importmapify.config', '.importmapify'] as const;
 const CONFIG_EXTENSIONS = ['mjs', 'cjs', 'js', 'ts', 'mts', 'cts'] as const;
@@ -54,12 +54,24 @@ function asString(value: unknown): string | undefined {
 	return typeof value === 'string' ? value : undefined;
 }
 
-function asPath(value: unknown): string | URL | undefined {
+function asPath(value: unknown): PathOrUrl | undefined {
 	return typeof value === 'string' || value instanceof URL ? value : undefined;
+}
+
+function asIndent(value: unknown): string | number | undefined {
+	return typeof value === 'string' || typeof value === 'number' ? value : undefined;
 }
 
 function asStringArray(value: unknown): readonly string[] | undefined {
 	return Array.isArray(value) && value.every((item) => typeof item === 'string') ? value : undefined;
+}
+
+function isTargetFilter(value: unknown): value is TargetFilter {
+	return value instanceof RegExp || typeof value === 'function';
+}
+
+function asTargetFilters(value: unknown): readonly TargetFilter[] | undefined {
+	return Array.isArray(value) && value.every(isTargetFilter) ? value : undefined;
 }
 
 function asStringRecord(value: unknown): Record<string, string> | undefined {
@@ -109,12 +121,14 @@ function asHooks(value: unknown): Partial<ImportMapHooks> | undefined {
  */
 function configToOptions(config: Readonly<Record<string, unknown>>, configDir: string): Config {
 	const result: {
-		root?: string | URL;
+		root?: PathOrUrl;
 		manifest?: string;
-		out?: string | URL;
-		relativeTo?: string | URL;
+		out?: PathOrUrl;
+		indent?: string | number;
+		relativeTo?: PathOrUrl;
 		conditions?: readonly string[];
 		extensions?: readonly string[];
+		filter?: readonly TargetFilter[];
 		packages?: Record<string, string>;
 		additionalImports?: Record<string, string>;
 		scopes?: Record<string, Record<string, string>>;
@@ -133,12 +147,16 @@ function configToOptions(config: Readonly<Record<string, unknown>>, configDir: s
 	if (manifest !== undefined) result.manifest = manifest;
 	const out = asPath(config.out);
 	if (out !== undefined) result.out = out;
+	const indent = asIndent(config.indent);
+	if (indent !== undefined) result.indent = indent;
 	const relativeTo = asPath(config.relativeTo);
 	if (relativeTo !== undefined) result.relativeTo = relativeTo;
 	const conditions = asStringArray(config.conditions);
 	if (conditions !== undefined) result.conditions = conditions;
 	const extensions = asStringArray(config.extensions);
 	if (extensions !== undefined) result.extensions = extensions;
+	const filter = asTargetFilters(config.filter);
+	if (filter !== undefined) result.filter = filter;
 	const packages = asStringRecord(config.packages);
 	if (packages !== undefined) result.packages = packages;
 	const additionalImports = asStringRecord(config.additionalImports);

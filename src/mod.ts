@@ -2,7 +2,8 @@
 /**
  * Expand package import patterns into explicit Deno import map entries.
  *
- * Use the library API to create, format, or write deterministic import maps.
+ * Use the library API to create, format, or write deterministic import maps that conform to the
+ * {@link https://html.spec.whatwg.org/multipage/webappapis.html#import-maps | Import Maps Standard}.
  * This module also runs the `importmapify` CLI when executed directly.
  *
  * @example
@@ -41,12 +42,14 @@ if (import.meta.main) {
 	});
 }
 
+export { createImportMap, defineConfig, formatImportMap, packageEntries, writeImportMap } from '#src/map';
 export type {
 	Config,
 	CreateImportMapOptions,
 	HookContext,
 	ImportMapDocument,
 	ImportMapHooks,
+	PathOrUrl,
+	TargetFilter,
 	WriteImportMapOptions,
-} from '#src/map';
-export { createImportMap, defineConfig, formatImportMap, packageEntries, writeImportMap } from '#src/map';
+} from '#src/types';

@@ -6,8 +6,8 @@
  */
 
 import { env, stderr } from 'bun';
-import type { WriteImportMapOptions } from '#src/map';
 import { defineConfig, writeImportMap } from '#src/map';
+import type { WriteImportMapOptions } from '#src/types';
 import lockfile from '../bun.lock' with { type: 'jsonc' };
 
 function lockSpec(name: string): string {

@@ -39,6 +39,8 @@ npx importmapify --root . --out import_map.json
 | `--scope prefix::key=value` | `-s`  | Scoped import override; repeatable                                        | none                |
 | `--condition name`          | `-c`  | Condition tried when a target is a conditional object; repeatable         | `import`, `default` |
 | `--ext name`                | `-e`  | Restrict pattern matches to these file extensions; repeatable             | all files           |
+| `--filter regex`            | `-f`  | Regular expression a pattern target path must match; repeatable           | all files           |
+| `--indent value`            |       | Indentation as a number of spaces or the word `tab`                       | tab                 |
 | `--config path`             | `-C`  | Config file path; skips discovery                                         | auto-discovered     |
 | `--no-config`               |       | Skip config file discovery                                                | off                 |
 | `--check`                   |       | Exit 1 if the output file is stale, without writing it                    | off                 |
@@ -84,9 +86,9 @@ Then `npx importmapify` reads it automatically. Point at a specific file with `-
 `--no-config`.
 
 Explicitly-passed flags override the config, which overrides built-in defaults: `--import`/`--package`/`--scope` merge
-onto the config's records with flag keys winning; `--condition`/`--ext` replace; `--root`/`--manifest`/`--out` win when
-passed. Configs are imported natively; a TypeScript config needs a type-stripping runtime (Bun, Deno, or Node \>= 22.6);
-on older Node use a `.mjs`/`.cjs`/`.js` config.
+onto the config's records with flag keys winning; `--condition`/`--ext`/`--filter` replace;
+`--root`/`--manifest`/`--out` win when passed. Configs are imported natively; a TypeScript config needs a type-stripping
+runtime (Bun, Deno, or Node \>= 22.6); on older Node use a `.mjs`/`.cjs`/`.js` config.
 
 ## Library
 
@@ -126,15 +128,17 @@ const out = writeImportMap({
 | `additionalImports` | Extra entries merged in after manifest expansion and packages; these win on key collision.        | none                    |
 | `scopes`            | Scope prefixes mapped to scope-specific import overrides.                                         | none                    |
 | `relativeTo`        | Directory the written targets are rebased against.                                                | `root`                  |
-| `extensions`        | File extensions, with or without a leading dot, that pattern targets may match.                   | all files               |
+| `extensions`        | Extension whitelist limiting which pattern targets are kept.                                      | all files               |
+| `filter`            | `RegExp`/predicate matchers a pattern target path must pass; combines with `extensions`.          | all files               |
 
-`WriteImportMapOptions` extends the above with an optional `out`, defaulting to `import_map.json` like the CLI. It is
-resolved against `root` and accepts a relative path, an absolute path, or a `file://` URL. `writeImportMap` rebases
-automatically against `out`'s directory, so a nested `out` (for example `.cache/maps/import_map.json`) still produces
-targets that resolve correctly from the map's own location.
+`WriteImportMapOptions` extends the above with an optional `out`, defaulting to `import_map.json` like the CLI, and an
+optional `indent` with `JSON.stringify` space semantics (a number of spaces or a literal string), defaulting to a tab.
+`out` is resolved against `root` and accepts a relative path, an absolute path, or a `file://` URL. `writeImportMap`
+rebases automatically against `out`'s directory, so a nested `out` (for example `.cache/maps/import_map.json`) still
+produces targets that resolve correctly from the map's own location.
 
-`Config` extends `Partial<WriteImportMapOptions>` with an optional `hooks` field — the shape a config file's default
-export and `defineConfig` take, with every field optional. An omitted `root` defaults to the config file's own
+`Config` extends `Partial<WriteImportMapOptions>` with an optional `hooks` field. It is the shape a config file's
+default export and `defineConfig` take, with every field optional. An omitted `root` defaults to the config file's own
 directory; the CLI supplies the remaining defaults.
 
 `defineConfig` returns its argument unchanged; it exists only to type a config object for export and reuse without a
@@ -170,6 +174,17 @@ non-modules:
 import { createImportMap } from 'importmapify';
 
 createImportMap({ root: import.meta.dirname, extensions: ['ts', 'tsx'] });
+```
+
+`filter` takes `RegExp` or predicate matchers tested against each candidate target path; a target is kept only when
+every matcher accepts it. Combined with `extensions`, this drops hashed build chunks a `dist/*` pattern would otherwise
+enumerate:
+
+```ts
+import { createImportMap } from 'importmapify';
+
+// Keep .js targets whose path is not an internal chunk like ./dist/internal-qo9O8jzH.js.
+createImportMap({ root: import.meta.dirname, extensions: ['js'], filter: [/^(?!.*internal)/] });
 ```
 
 Build one conformant pair directly with `packageEntries`:
