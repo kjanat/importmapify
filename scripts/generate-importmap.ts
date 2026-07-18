@@ -16,7 +16,7 @@ function lockSpec(name: string): string {
 	return entry[0];
 }
 
-const options: WriteImportMapOptions = defineConfig({
+const options: WriteImportMapOptions & { readonly out: string } = defineConfig({
 	out: 'import_map.json',
 	root: new URL('..', import.meta.url).pathname,
 	additionalImports: {

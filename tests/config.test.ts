@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import process from 'node:process';
 import { afterEach, describe, expect, it } from 'bun:test';
-import { configToOptions, discoverConfig, loadConfig, mergeScopes } from '#src/config.ts';
+import { configToOptions, discoverConfig, loadConfig, mergeScopes } from '#src/config';
 
 const dirs: string[] = [];
 const NON_OBJECT_DEFAULT = /must have a default export object/;

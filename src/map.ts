@@ -12,14 +12,30 @@ import type {
 } from '#src/types';
 
 const DEFAULT_CONDITIONS = ['import', 'default'] as const;
+
+/** Default output filename for a written import map. */
 const DEFAULT_OUT = 'import_map.json';
+
 const SCHEME_PREFIX = /^(jsr|npm):(?!\/)/;
 
+/**
+ * Normalize a location to a filesystem path.
+ *
+ * @param value Path string, `file://` URL string, or {@link URL}.
+ * @returns The filesystem path.
+ */
 function toPath(value: PathOrUrl): string {
 	if (typeof value === 'string') return value.startsWith('file://') ? fileURLToPath(value) : value;
 	return fileURLToPath(value.href);
 }
 
+/**
+ * Resolve an output location against a project root.
+ *
+ * @param root Project root directory.
+ * @param out Output location, relative or absolute.
+ * @returns The absolute output path.
+ */
 function resolveOut(root: PathOrUrl, out: PathOrUrl): string {
 	return path.resolve(toPath(root), toPath(out));
 }
@@ -159,7 +175,7 @@ function buildScopes(
 	return scopes;
 }
 
-function sortEntries(entries: Readonly<Record<string, string>>): Record<string, string> {
+function sortEntries<T>(entries: Readonly<Record<string, T>>): Record<string, T> {
 	return Object.fromEntries(Object.entries(entries).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)));
 }
 
@@ -212,7 +228,7 @@ function createImportMap(options: CreateImportMapOptions): ImportMapDocument {
 	const scopes = buildScopes(root, relativeTo, options.scopes ?? {});
 
 	const sortedImports = sortEntries(imports);
-	const sortedScopes = Object.fromEntries(Object.entries(scopes).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)));
+	const sortedScopes = sortEntries(scopes);
 	return Object.keys(sortedScopes).length === 0
 		? { imports: sortedImports }
 		: { imports: sortedImports, scopes: sortedScopes };

@@ -4,7 +4,7 @@ import path from 'node:path';
 import { afterEach, describe, expect, it } from 'bun:test';
 import { strip } from 'ansispeck';
 import { runCommand } from 'dreamcli/testkit';
-import { generateCommand } from '#src/cli.ts';
+import { generateCommand } from '#src/cli';
 
 const roots: string[] = [];
 

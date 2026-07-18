@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { packageEntries } from '#src/map.ts';
+import { packageEntries } from '#src/map';
 
 describe('packageEntries', () => {
 	it('adds the jsr scheme slash to the trailing-slash entry', () => {

@@ -4,6 +4,14 @@ import { pathToFileURL } from 'node:url';
 import { isRecord } from '#src/expand';
 import type { Config, ImportMapHooks, PathOrUrl, TargetFilter, WriteImportMapOptions } from '#src/types';
 
+type PartialOptions = { -readonly [K in keyof WriteImportMapOptions]?: WriteImportMapOptions[K] };
+type MutableConfig = PartialOptions & { hooks?: Partial<ImportMapHooks> };
+
+/** Set `key` on `target` unless the value is `undefined`, keeping the key/value pairing type-checked. */
+function assign<T, K extends keyof T>(target: T, key: K, value: T[K] | undefined): void {
+	if (value !== undefined) target[key] = value;
+}
+
 const CONFIG_BASENAMES = ['importmapify.config', '.importmapify'] as const;
 const CONFIG_EXTENSIONS = ['mjs', 'cjs', 'js', 'ts', 'mts', 'cts'] as const;
 
@@ -95,6 +103,14 @@ function asScopes(value: unknown): Record<string, Record<string, string>> | unde
 	return scopes;
 }
 
+function resolveRoot(root: PathOrUrl | undefined, configDir: string): PathOrUrl {
+	if (root === undefined) return configDir;
+	if (typeof root === 'string' && !path.isAbsolute(root) && !root.startsWith('file://')) {
+		return path.resolve(configDir, root);
+	}
+	return root;
+}
+
 function isHook<T extends (context: never) => void | Promise<void>>(value: unknown): value is T {
 	return typeof value === 'function';
 }
@@ -120,52 +136,18 @@ function asHooks(value: unknown): Partial<ImportMapHooks> | undefined {
  * @returns The subset of {@link WriteImportMapOptions} the config declares, plus any hooks.
  */
 function configToOptions(config: Readonly<Record<string, unknown>>, configDir: string): Config {
-	const result: {
-		root?: PathOrUrl;
-		manifest?: string;
-		out?: PathOrUrl;
-		indent?: string | number;
-		relativeTo?: PathOrUrl;
-		conditions?: readonly string[];
-		extensions?: readonly string[];
-		filter?: readonly TargetFilter[];
-		packages?: Record<string, string>;
-		additionalImports?: Record<string, string>;
-		scopes?: Record<string, Record<string, string>>;
-		hooks?: Partial<ImportMapHooks>;
-	} = {};
-
-	const root = asPath(config.root);
-	if (root === undefined) {
-		result.root = configDir;
-	} else if (typeof root === 'string' && !path.isAbsolute(root) && !root.startsWith('file://')) {
-		result.root = path.resolve(configDir, root);
-	} else {
-		result.root = root;
-	}
-	const manifest = asString(config.manifest);
-	if (manifest !== undefined) result.manifest = manifest;
-	const out = asPath(config.out);
-	if (out !== undefined) result.out = out;
-	const indent = asIndent(config.indent);
-	if (indent !== undefined) result.indent = indent;
-	const relativeTo = asPath(config.relativeTo);
-	if (relativeTo !== undefined) result.relativeTo = relativeTo;
-	const conditions = asStringArray(config.conditions);
-	if (conditions !== undefined) result.conditions = conditions;
-	const extensions = asStringArray(config.extensions);
-	if (extensions !== undefined) result.extensions = extensions;
-	const filter = asTargetFilters(config.filter);
-	if (filter !== undefined) result.filter = filter;
-	const packages = asStringRecord(config.packages);
-	if (packages !== undefined) result.packages = packages;
-	const additionalImports = asStringRecord(config.additionalImports);
-	if (additionalImports !== undefined) result.additionalImports = additionalImports;
-	const scopes = asScopes(config.scopes);
-	if (scopes !== undefined) result.scopes = scopes;
-	const hooks = asHooks(config.hooks);
-	if (hooks !== undefined) result.hooks = hooks;
-
+	const result: MutableConfig = { root: resolveRoot(asPath(config.root), configDir) };
+	assign(result, 'manifest', asString(config.manifest));
+	assign(result, 'out', asPath(config.out));
+	assign(result, 'indent', asIndent(config.indent));
+	assign(result, 'relativeTo', asPath(config.relativeTo));
+	assign(result, 'conditions', asStringArray(config.conditions));
+	assign(result, 'extensions', asStringArray(config.extensions));
+	assign(result, 'filter', asTargetFilters(config.filter));
+	assign(result, 'packages', asStringRecord(config.packages));
+	assign(result, 'additionalImports', asStringRecord(config.additionalImports));
+	assign(result, 'scopes', asScopes(config.scopes));
+	assign(result, 'hooks', asHooks(config.hooks));
 	return result;
 }
 
@@ -186,4 +168,4 @@ function mergeScopes(
 	return result;
 }
 
-export { configToOptions, discoverConfig, loadConfig, mergeScopes };
+export { assign, configToOptions, discoverConfig, loadConfig, mergeScopes };

@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'bun:test';
-import { createImportMap, defineConfig, formatImportMap } from '#src/map.ts';
+import { createImportMap, defineConfig, formatImportMap } from '#src/map';
 
 const roots: string[] = [];
 const PATTERN_MISMATCH = /both sides must contain/;

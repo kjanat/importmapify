@@ -4,7 +4,7 @@ import path from 'node:path';
 import process from 'node:process';
 import { afterEach, describe, expect, it } from 'bun:test';
 import { runCommand } from 'dreamcli/testkit';
-import { generateCommand } from '#src/cli.ts';
+import { generateCommand } from '#src/cli';
 
 const roots: string[] = [];
 

@@ -81,7 +81,7 @@ export default defineConfig({
 				homepage: pkg.homepage,
 				repository: pkg.repository,
 				license: pkg.license,
-				importMap: `./${importMapOptions.out ?? 'import_map.json'}`,
+				importMap: importMapOptions.out,
 			};
 			await fs.writeFile(denoPath, `${JSON.stringify(deno, null, '\t')}\n`, {
 				encoding: 'utf8',

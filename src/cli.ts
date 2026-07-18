@@ -4,7 +4,7 @@ import { argv, cwd } from 'node:process';
 import { bold, cyan } from 'ansispeck';
 import type { AnyCommandBuilder } from 'dreamcli';
 import { CLIError, command, flag } from 'dreamcli';
-import { configToOptions, discoverConfig, loadConfig, mergeScopes } from '#src/config';
+import { assign, configToOptions, discoverConfig, loadConfig, mergeScopes } from '#src/config';
 import { DEFAULT_OUT, createImportMap, formatImportMap, resolveOut, toPath } from '#src/map';
 import type { Config, HookContext, PathOrUrl, TargetFilter, WriteImportMapOptions } from '#src/types';
 
@@ -144,6 +144,11 @@ function compileFilters(raws: readonly string[]): readonly RegExp[] {
 /** Resolved import map options with the config hooks the CLI runs around generation. */
 type ResolvedGenerate = WriteImportMapOptions & { readonly hooks?: Config['hooks'] };
 
+type MutableResolved = { -readonly [K in keyof ResolvedGenerate]?: ResolvedGenerate[K] } & Pick<
+	ResolvedGenerate,
+	'root' | 'manifest' | 'out' | 'packages' | 'additionalImports' | 'scopes'
+>;
+
 /** Resolve final import map options by layering explicit flags over a discovered config over defaults. */
 async function resolveGenerateOptions(flags: GenerateFlags): Promise<ResolvedGenerate> {
 	const base = await loadConfigOptions(flags.root, flags.config, flags['no-config'] ?? false);
@@ -154,20 +159,7 @@ async function resolveGenerateOptions(flags: GenerateFlags): Promise<ResolvedGen
 		base.filter,
 	);
 	const indent = flags.indent === undefined ? base.indent : parseIndent(flags.indent);
-	const options: {
-		root: PathOrUrl;
-		manifest: string;
-		out: PathOrUrl;
-		indent?: string | number;
-		relativeTo?: PathOrUrl;
-		conditions?: readonly string[];
-		extensions?: readonly string[];
-		filter?: readonly TargetFilter[];
-		packages: Record<string, string>;
-		additionalImports: Record<string, string>;
-		scopes: Record<string, Record<string, string>>;
-		hooks?: Config['hooks'];
-	} = {
+	const options: MutableResolved = {
 		root: preferExplicit(flags.root !== cwd(), flags.root, base.root),
 		manifest: preferExplicit(flags.manifest !== 'package.json', flags.manifest, base.manifest),
 		out: preferExplicit(flags.out !== DEFAULT_OUT, flags.out, base.out),
@@ -178,12 +170,12 @@ async function resolveGenerateOptions(flags: GenerateFlags): Promise<ResolvedGen
 		},
 		scopes: mergeScopes(base.scopes, buildScopes(flags.scope ?? [])),
 	};
-	if (base.relativeTo !== undefined) options.relativeTo = base.relativeTo;
-	if (indent !== undefined) options.indent = indent;
-	if (conditions !== undefined) options.conditions = conditions;
-	if (extensions !== undefined) options.extensions = extensions;
-	if (filter !== undefined) options.filter = filter;
-	if (base.hooks !== undefined) options.hooks = base.hooks;
+	assign(options, 'relativeTo', base.relativeTo);
+	assign(options, 'indent', indent);
+	assign(options, 'conditions', conditions);
+	assign(options, 'extensions', extensions);
+	assign(options, 'filter', filter);
+	assign(options, 'hooks', base.hooks);
 	return options;
 }
 
