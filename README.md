@@ -97,9 +97,8 @@ resolved against `root` and accepts a relative path, an absolute path, or a `fil
 automatically against `out`'s directory, so a nested `out` (for example `.cache/maps/import_map.json`) still produces
 targets that resolve correctly from the map's own location.
 
-`defineConfig` returns its argument unchanged; it exists only to type an exported config object without a manual
-annotation. Under `isolatedDeclarations`, an exported binding still needs its own annotation, so there `defineConfig`
-helps only for a config used locally rather than exported.
+`defineConfig` returns its argument unchanged; it exists only to type a config object for export and reuse without a
+manual annotation.
 
 ### Recipes
 
@@ -113,10 +112,10 @@ writeImportMap({
   root: import.meta.dirname,
   packages: {
     dreamcli: 'jsr:@kjanat/dreamcli@^3',
-    chalk: 'npm:chalk@5',
+    ansispeck: 'npm:ansispeck@^0.2',
   },
 });
-// dreamcli, dreamcli/ -> jsr:/@kjanat/dreamcli@^3/, chalk, chalk/ -> npm:/chalk@5/
+// dreamcli, dreamcli/ -> jsr:/@kjanat/dreamcli@^3/, ansispeck, ansispeck/ -> npm:/ansispeck@^0.2/
 ```
 
 Restrict pattern expansion to importable files with `extensions`, so a bare `./src/*` skips `.md`, `.json`, and other
@@ -142,7 +141,7 @@ Type a reusable config with `defineConfig` and share it across calls:
 ```ts
 import { createImportMap, defineConfig, writeImportMap } from 'importmapify';
 
-const config = defineConfig({ root: import.meta.dirname, packages: { chalk: 'npm:chalk@5' } });
+const config = defineConfig({ root: import.meta.dirname, packages: { ansispeck: 'npm:ansispeck@^0.2' } });
 const map = createImportMap(config);
 const written = writeImportMap(config);
 ```

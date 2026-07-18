@@ -10,9 +10,9 @@ describe('packageEntries', () => {
 	});
 
 	it('adds the npm scheme slash to the trailing-slash entry', () => {
-		expect(packageEntries('chalk', 'npm:chalk@5')).toEqual({
-			chalk: 'npm:chalk@5',
-			'chalk/': 'npm:/chalk@5/',
+		expect(packageEntries('ansispeck', 'npm:ansispeck@0.2')).toEqual({
+			ansispeck: 'npm:ansispeck@0.2',
+			'ansispeck/': 'npm:/ansispeck@0.2/',
 		});
 	});
 

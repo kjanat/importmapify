@@ -148,15 +148,15 @@ describe('createImportMap', () => {
 		expect(
 			createImportMap({
 				root,
-				packages: { '@std/async': 'jsr:@std/async@^1.0.0', chalk: 'npm:chalk@5' },
-				additionalImports: { chalk: 'npm:chalk@4' },
+				packages: { '@std/async': 'jsr:@std/async@^1.0.0', ansispeck: 'npm:ansispeck@0.2' },
+				additionalImports: { ansispeck: 'npm:ansispeck@0.1' },
 			}),
 		).toEqual({
 			imports: {
 				'@std/async': 'jsr:@std/async@^1.0.0',
 				'@std/async/': 'jsr:/@std/async@^1.0.0/',
-				chalk: 'npm:chalk@4',
-				'chalk/': 'npm:/chalk@5/',
+				ansispeck: 'npm:ansispeck@0.1',
+				'ansispeck/': 'npm:/ansispeck@0.2/',
 			},
 		});
 	});
