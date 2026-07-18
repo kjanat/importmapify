@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname } from 'node:path';
-import { cwd } from 'node:process';
+import { argv, cwd } from 'node:process';
 import { bold, cyan } from 'ansispeck';
 import type { AnyCommandBuilder } from 'dreamcli';
 import { CLIError, command, flag } from 'dreamcli';
@@ -9,9 +9,12 @@ import type { WriteImportMapOptions } from '#src/map';
 import { createImportMap, DEFAULT_OUT, formatImportMap, resolveOut, writeImportMap } from '#src/map';
 
 const EXAMPLE_TOKEN = /(?:'[^']*'|"[^"]*"|\S)+/g;
+const JSON_MODE = argv.includes('--json');
 
-// dreamcli renders example commands unstyled (kjanat/dreamcli#65).
+// dreamcli renders example commands unstyled (kjanat/dreamcli#65); styling is baked in here, so skip
+// it under --json to keep the serialized schema free of escape codes.
 function highlightExample(example: string): string {
+	if (JSON_MODE) return example;
 	const tokens = example.match(EXAMPLE_TOKEN);
 	if (tokens === null) return example;
 	return tokens

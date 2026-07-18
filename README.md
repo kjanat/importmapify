@@ -43,6 +43,7 @@ npx importmapify --root . --out import_map.json
 | `--no-config`               |       | Skip config file discovery                                                | off                 |
 | `--check`                   |       | Exit 1 if the output file is stale, without writing it                    | off                 |
 | `--stdout`                  |       | Print the map instead of writing it                                       | off                 |
+| `--quiet`                   | `-q`  | Suppress the `Wrote <path>` confirmation (written to stderr)              | off                 |
 
 Add global and test-scoped dependencies from the CLI:
 
@@ -61,9 +62,21 @@ order (first match wins): `importmapify.config.{mjs,cjs,js,ts,mts,cts}`, then `.
 
 ```js
 // importmapify.config.mjs
+import { defineConfig } from 'importmapify';
+
+export default defineConfig({
+  packages: { dreamcli: 'jsr:@kjanat/dreamcli@^3' },
+  extensions: ['ts'],
+});
+```
+
+Or annotate a plain object, no import:
+
+```js
+/** @type {import('importmapify').Config} */
 export default {
-	packages: { dreamcli: 'jsr:@kjanat/dreamcli@^3' },
-	extensions: ['ts'],
+  packages: { dreamcli: 'jsr:@kjanat/dreamcli@^3' },
+  extensions: ['ts'],
 };
 ```
 
@@ -72,9 +85,8 @@ Then `npx importmapify` reads it automatically. Point at a specific file with `-
 
 Explicitly-passed flags override the config, which overrides built-in defaults: `--import`/`--package`/`--scope` merge
 onto the config's records with flag keys winning; `--condition`/`--ext` replace; `--root`/`--manifest`/`--out` win when
-passed. Configs are imported natively; a TypeScript config needs a runtime that strips types (Bun, Deno, or Node
-
-> = 22.6), so on older Node use a `.mjs`/`.cjs`/`.js` config.
+passed. Configs are imported natively; a TypeScript config needs a type-stripping runtime (Bun, Deno, or Node \>= 22.6);
+on older Node use a `.mjs`/`.cjs`/`.js` config.
 
 ## Library
 
@@ -95,13 +107,13 @@ const out = writeImportMap({
 });
 ```
 
-| Export            | Signature                                                   | Purpose                                                                               |
-| ----------------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| `defineConfig`    | `(options: WriteImportMapOptions) => WriteImportMapOptions` | Identity helper that types a config object for export and reuse.                      |
-| `createImportMap` | `(options: CreateImportMapOptions) => ImportMapDocument`    | Build the import map in memory.                                                       |
-| `formatImportMap` | `(map: ImportMapDocument) => string`                        | Serialize to the canonical sorted, tab-indented JSON text.                            |
-| `writeImportMap`  | `(options: WriteImportMapOptions) => string`                | Build, serialize, and write to disk; returns the written path.                        |
-| `packageEntries`  | `(name: string, target: string) => Record<string, string>`  | Build the bare and trailing-slash entry pair a package needs to resolve its subpaths. |
+| Export            | Signature                                                  | Purpose                                                                               |
+| ----------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `defineConfig`    | `(config: Config) => Config`                               | Identity helper that types a config object for export and reuse.                      |
+| `createImportMap` | `(options: CreateImportMapOptions) => ImportMapDocument`   | Build the import map in memory.                                                       |
+| `formatImportMap` | `(map: ImportMapDocument) => string`                       | Serialize to the canonical sorted, tab-indented JSON text.                            |
+| `writeImportMap`  | `(options: WriteImportMapOptions) => string`               | Build, serialize, and write to disk; returns the written path.                        |
+| `packageEntries`  | `(name: string, target: string) => Record<string, string>` | Build the bare and trailing-slash entry pair a package needs to resolve its subpaths. |
 
 `CreateImportMapOptions`:
 
@@ -120,6 +132,8 @@ const out = writeImportMap({
 resolved against `root` and accepts a relative path, an absolute path, or a `file://` URL. `writeImportMap` rebases
 automatically against `out`'s directory, so a nested `out` (for example `.cache/maps/import_map.json`) still produces
 targets that resolve correctly from the map's own location.
+
+`Config` is an alias for `WriteImportMapOptions` — the shape a config file's default export and `defineConfig` take.
 
 `defineConfig` returns its argument unchanged; it exists only to type a config object for export and reuse without a
 manual annotation.
@@ -398,11 +412,10 @@ import { writeImportMap } from 'importmapify';
 const root = '/path/to/source-tree';
 const importMap = writeImportMap({ root, out: 'import_map.json' });
 
-const documentation = execFileSync(
-  'deno',
-  ['doc', '--import-map', importMap, '--json', 'src/index.ts'],
-  { cwd: root, encoding: 'utf8' },
-);
+const documentation = execFileSync('deno', ['doc', '--import-map', importMap, '--json', 'src/index.ts'], {
+  cwd: root,
+  encoding: 'utf8',
+});
 ```
 
 ### `@deno/doc`

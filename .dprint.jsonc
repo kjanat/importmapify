@@ -6,7 +6,7 @@
 	"markdown": {
 		"lineWidth": 120,
 		"textWrap": "always",
-		"tags": { "json": "", "ts": "" }
+		"tags": { "json": "", "ts": "", "js": "" }
 	},
 	"biome": {
 		"lineEnding": "lf",

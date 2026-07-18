@@ -40,6 +40,9 @@ interface WriteImportMapOptions extends CreateImportMapOptions {
 	readonly out?: string | URL;
 }
 
+/** An importmapify config: the shape a config file's default export and {@linkcode defineConfig} take. */
+type Config = WriteImportMapOptions;
+
 const DEFAULT_CONDITIONS = ['import', 'default'] as const;
 const DEFAULT_OUT = 'import_map.json';
 const SCHEME_PREFIX = /^(jsr|npm):(?!\/)/;
@@ -315,12 +318,12 @@ function packageEntries(name: string, target: string): Record<string, string> {
  * writeImportMap(config);
  * ```
  *
- * @param options Import map configuration, with an optional `out`.
- * @returns The same `options` value, typed as {@link WriteImportMapOptions}.
+ * @param config Import map configuration, with an optional `out`.
+ * @returns The same `config` value, typed as {@link Config}.
  */
-function defineConfig(options: WriteImportMapOptions): WriteImportMapOptions {
-	return options;
+function defineConfig(config: Config): Config {
+	return config;
 }
 
-export type { CreateImportMapOptions, ImportMapDocument, WriteImportMapOptions };
+export type { Config, CreateImportMapOptions, ImportMapDocument, WriteImportMapOptions };
 export { createImportMap, DEFAULT_OUT, defineConfig, formatImportMap, packageEntries, resolveOut, writeImportMap };

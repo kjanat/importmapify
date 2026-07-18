@@ -41,5 +41,5 @@ if (import.meta.main) {
 	});
 }
 
-export type { CreateImportMapOptions, ImportMapDocument, WriteImportMapOptions } from '#src/map';
+export type { Config, CreateImportMapOptions, ImportMapDocument, WriteImportMapOptions } from '#src/map';
 export { createImportMap, defineConfig, formatImportMap, packageEntries, writeImportMap } from '#src/map';
