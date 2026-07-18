@@ -91,12 +91,17 @@ describe('configToOptions', () => {
 				'/repo',
 			),
 		).toEqual({
+			root: '/repo',
 			manifest: 'deno.json',
 			conditions: ['deno', 'default'],
 			extensions: ['ts'],
 			packages: { ansispeck: 'npm:ansispeck@0.2' },
 			scopes: { './tests/': { helper: './helper.ts' } },
 		});
+	});
+
+	it('defaults an omitted root to the config directory', () => {
+		expect(configToOptions({ extensions: ['ts'] }, '/repo').root).toBe('/repo');
 	});
 
 	it('resolves a relative string root against the config directory', () => {
@@ -107,6 +112,17 @@ describe('configToOptions', () => {
 		const url = new URL('file:///abs/root/');
 		expect(configToOptions({ root: '/abs/root' }, '/repo').root).toBe('/abs/root');
 		expect(configToOptions({ root: url }, '/repo').root).toBe(url);
+	});
+
+	it('keeps function hooks and drops non-function entries', () => {
+		const before = () => undefined;
+		const result = configToOptions({ hooks: { 'generate:before': before, 'generate:done': 'nope' } }, '/repo');
+		expect(result.hooks).toEqual({ 'generate:before': before });
+	});
+
+	it('omits hooks when the field holds no functions', () => {
+		expect(configToOptions({ hooks: { 'generate:before': 1 } }, '/repo').hooks).toBeUndefined();
+		expect(configToOptions({ hooks: 'nope' }, '/repo').hooks).toBeUndefined();
 	});
 });
 

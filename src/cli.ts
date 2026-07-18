@@ -1,12 +1,12 @@
-import { existsSync, readFileSync } from 'node:fs';
-import { dirname } from 'node:path';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
 import { argv, cwd } from 'node:process';
 import { bold, cyan } from 'ansispeck';
 import type { AnyCommandBuilder } from 'dreamcli';
 import { CLIError, command, flag } from 'dreamcli';
 import { configToOptions, discoverConfig, loadConfig, mergeScopes } from '#src/config';
-import type { WriteImportMapOptions } from '#src/map';
-import { createImportMap, DEFAULT_OUT, formatImportMap, resolveOut, writeImportMap } from '#src/map';
+import type { Config, HookContext, WriteImportMapOptions } from '#src/map';
+import { createImportMap, DEFAULT_OUT, formatImportMap, resolveOut, toPath } from '#src/map';
 
 const EXAMPLE_TOKEN = /(?:'[^']*'|"[^"]*"|\S)+/g;
 const JSON_MODE = argv.includes('--json');
@@ -79,7 +79,7 @@ async function loadConfigOptions(
 	searchRoot: string,
 	configFlag: string | undefined,
 	noConfig: boolean,
-): Promise<Partial<WriteImportMapOptions>> {
+): Promise<Config> {
 	if (noConfig) return {};
 	const file = configFlag ?? discoverConfig(searchRoot);
 	if (file === undefined) return {};
@@ -114,8 +114,11 @@ function preferArray(
 	return flagValue !== undefined && flagValue.length > 0 ? flagValue : configValue;
 }
 
+/** Resolved import map options with the config hooks the CLI runs around generation. */
+type ResolvedGenerate = WriteImportMapOptions & { readonly hooks?: Config['hooks'] };
+
 /** Resolve final import map options by layering explicit flags over a discovered config over defaults. */
-async function resolveGenerateOptions(flags: GenerateFlags): Promise<WriteImportMapOptions> {
+async function resolveGenerateOptions(flags: GenerateFlags): Promise<ResolvedGenerate> {
 	const base = await loadConfigOptions(flags.root, flags.config, flags['no-config'] ?? false);
 	const conditions = preferArray(flags.condition, base.conditions);
 	const extensions = preferArray(flags.ext, base.extensions);
@@ -129,6 +132,7 @@ async function resolveGenerateOptions(flags: GenerateFlags): Promise<WriteImport
 		packages: Record<string, string>;
 		additionalImports: Record<string, string>;
 		scopes: Record<string, Record<string, string>>;
+		hooks?: Config['hooks'];
 	} = {
 		root: preferExplicit(flags.root !== cwd(), flags.root, base.root),
 		manifest: preferExplicit(flags.manifest !== 'package.json', flags.manifest, base.manifest),
@@ -143,6 +147,7 @@ async function resolveGenerateOptions(flags: GenerateFlags): Promise<WriteImport
 	if (base.relativeTo !== undefined) options.relativeTo = base.relativeTo;
 	if (conditions !== undefined) options.conditions = conditions;
 	if (extensions !== undefined) options.extensions = extensions;
+	if (base.hooks !== undefined) options.hooks = base.hooks;
 	return options;
 }
 
@@ -219,24 +224,28 @@ export const generateCommand: AnyCommandBuilder = command('generate')
 		const options = await resolveGenerateOptions(flags);
 		const outPath = resolveOut(options.root, options.out ?? DEFAULT_OUT);
 		const createOptions = { ...options, relativeTo: options.relativeTo ?? dirname(outPath) };
+		const hookContext: HookContext = { root: resolve(toPath(options.root)), out: outPath };
+
+		await options.hooks?.['generate:before']?.(hookContext);
+
+		const map = createImportMap(createOptions);
+		const text = formatImportMap(map);
 
 		if (stdout) {
-			log(formatImportMap(createImportMap(createOptions)));
-			return;
-		}
-
-		if (check) {
-			const expected = formatImportMap(createImportMap(createOptions));
+			log(text);
+		} else if (check) {
 			const actual = existsSync(outPath) ? readFileSync(outPath, 'utf8') : undefined;
-			if (actual !== expected) {
+			if (actual !== text) {
 				error(`${outPath} is stale`);
 				setExitCode(1);
-				return;
+			} else if (!quiet) {
+				warn(`${outPath} is up to date`);
 			}
-			if (!quiet) warn(`${outPath} is up to date`);
-			return;
+		} else {
+			mkdirSync(dirname(outPath), { recursive: true });
+			writeFileSync(outPath, text);
+			if (!quiet) warn(`Wrote ${outPath}`);
 		}
 
-		const written = writeImportMap(options);
-		if (!quiet) warn(`Wrote ${written}`);
+		await options.hooks?.['generate:done']?.({ ...hookContext, map });
 	});

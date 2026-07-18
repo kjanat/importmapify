@@ -6,7 +6,7 @@
  */
 
 import { env, stderr } from 'bun';
-import type { Config } from '#src/map';
+import type { WriteImportMapOptions } from '#src/map';
 import { defineConfig, writeImportMap } from '#src/map';
 import lockfile from '../bun.lock' with { type: 'jsonc' };
 
@@ -16,7 +16,7 @@ function lockSpec(name: string): string {
 	return entry[0];
 }
 
-const options: Config = defineConfig({
+const options: WriteImportMapOptions = defineConfig({
 	out: 'import_map.json',
 	root: new URL('..', import.meta.url).pathname,
 	additionalImports: {

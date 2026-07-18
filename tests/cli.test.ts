@@ -230,3 +230,45 @@ describe('generateCommand config file', () => {
 		});
 	});
 });
+
+describe('generateCommand hooks', () => {
+	const BeforeHook = [
+		"import fs from 'node:fs';",
+		"import path from 'node:path';",
+		'export default {',
+		'  hooks: {',
+		"    'generate:before': (ctx) => {",
+		"      fs.mkdirSync(path.join(ctx.root, 'dist'), { recursive: true });",
+		"      fs.writeFileSync(path.join(ctx.root, 'dist', 'a.js'), '');",
+		'    },',
+		'  },',
+		'};',
+	].join('\n');
+
+	it('runs generate:before so its output is scanned', async () => {
+		const root = fixture({ '#dist/*': './dist/*.js' });
+		writeConfig(root, 'importmapify.config.mjs', BeforeHook);
+		const result = await runCommand(generateCommand, ['--root', root, '--stdout']);
+		expect(JSON.parse(result.stdout.join('')).imports['#dist/a']).toBe('./dist/a.js');
+	});
+
+	const DoneHook = [
+		"import fs from 'node:fs';",
+		"import path from 'node:path';",
+		'export default {',
+		'  hooks: {',
+		"    'generate:done': (ctx) => {",
+		"      fs.writeFileSync(path.join(ctx.root, 'done.json'), JSON.stringify(ctx.map));",
+		'    },',
+		'  },',
+		'};',
+	].join('\n');
+
+	it('runs generate:done with the finished map', async () => {
+		const root = fixture({ '#lib/*': './src/*.ts' }, ['src/a.ts']);
+		writeConfig(root, 'importmapify.config.mjs', DoneHook);
+		await runCommand(generateCommand, ['--root', root, '--stdout']);
+		const seen = JSON.parse(fs.readFileSync(path.join(root, 'done.json'), 'utf8'));
+		expect(seen.imports['#lib/a']).toBe('./src/a.ts');
+	});
+});

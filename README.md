@@ -109,7 +109,7 @@ const out = writeImportMap({
 
 | Export            | Signature                                                  | Purpose                                                                               |
 | ----------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| `defineConfig`    | `(config: Config) => Config`                               | Identity helper that types a config object for export and reuse.                      |
+| `defineConfig`    | `<T extends Config>(config: T) => T`                       | Identity helper that types a config object for export and reuse.                      |
 | `createImportMap` | `(options: CreateImportMapOptions) => ImportMapDocument`   | Build the import map in memory.                                                       |
 | `formatImportMap` | `(map: ImportMapDocument) => string`                       | Serialize to the canonical sorted, tab-indented JSON text.                            |
 | `writeImportMap`  | `(options: WriteImportMapOptions) => string`               | Build, serialize, and write to disk; returns the written path.                        |
@@ -133,10 +133,17 @@ resolved against `root` and accepts a relative path, an absolute path, or a `fil
 automatically against `out`'s directory, so a nested `out` (for example `.cache/maps/import_map.json`) still produces
 targets that resolve correctly from the map's own location.
 
-`Config` is an alias for `WriteImportMapOptions` — the shape a config file's default export and `defineConfig` take.
+`Config` extends `Partial<WriteImportMapOptions>` with an optional `hooks` field — the shape a config file's default
+export and `defineConfig` take, with every field optional. An omitted `root` defaults to the config file's own
+directory; the CLI supplies the remaining defaults.
 
 `defineConfig` returns its argument unchanged; it exists only to type a config object for export and reuse without a
 manual annotation.
+
+`hooks` are lifecycle functions the CLI runs around generation, modeled on tsdown's hooks. `generate:before` runs before
+the filesystem is scanned, so building generated targets there keeps them out of a stale map; `generate:done` runs after
+the map is emitted. Each receives `{ root, out }` (`generate:done` also gets the finished `map`) and may be async. The
+synchronous library functions ignore `hooks`.
 
 ### Recipes
 
@@ -182,6 +189,20 @@ import { createImportMap, defineConfig, writeImportMap } from 'importmapify';
 const config = defineConfig({ root: import.meta.dirname, packages: { ansispeck: 'npm:ansispeck@^0.2' } });
 const map = createImportMap(config);
 const written = writeImportMap(config);
+```
+
+Build before scanning with a `generate:before` hook, so a map that includes build output does not drop entries when it
+runs before the build:
+
+```ts
+import { execSync } from 'node:child_process';
+import { defineConfig } from 'importmapify';
+
+export default defineConfig({
+  hooks: {
+    'generate:before': () => execSync('bun run build', { stdio: 'inherit' }),
+  },
+});
 ```
 
 `root`, `relativeTo`, and `out` accept a path or a `file://` URL, so `import.meta.url` needs no `.pathname`:

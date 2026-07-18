@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { isRecord } from '#src/expand';
-import type { WriteImportMapOptions } from '#src/map';
+import type { Config, ImportMapHooks, WriteImportMapOptions } from '#src/map';
 
 const CONFIG_BASENAMES = ['importmapify.config', '.importmapify'] as const;
 const CONFIG_EXTENSIONS = ['mjs', 'cjs', 'js', 'ts', 'mts', 'cts'] as const;
@@ -83,20 +83,31 @@ function asScopes(value: unknown): Record<string, Record<string, string>> | unde
 	return scopes;
 }
 
+function isHook<T extends (context: never) => void | Promise<void>>(value: unknown): value is T {
+	return typeof value === 'function';
+}
+
+function asHooks(value: unknown): Partial<ImportMapHooks> | undefined {
+	if (!isRecord(value)) return;
+	const hooks: { -readonly [K in keyof ImportMapHooks]?: ImportMapHooks[K] } = {};
+	const before = value['generate:before'];
+	if (isHook<ImportMapHooks['generate:before']>(before)) hooks['generate:before'] = before;
+	const done = value['generate:done'];
+	if (isHook<ImportMapHooks['generate:done']>(done)) hooks['generate:done'] = done;
+	return hooks['generate:before'] === undefined && hooks['generate:done'] === undefined ? undefined : hooks;
+}
+
 /**
  * Parse a raw config object into typed import map options.
  *
- * Only known fields are read; a relative string `root` is resolved against the config
- * file's own directory so a config can anchor itself with `root: '.'`.
+ * Only known fields are read. An omitted `root` defaults to the config file's own directory; a relative
+ * string `root` resolves against it, so a config can anchor itself with `root: '.'`.
  *
  * @param config Raw default-exported config object.
  * @param configDir Directory containing the config file.
- * @returns The subset of {@link WriteImportMapOptions} the config declares.
+ * @returns The subset of {@link WriteImportMapOptions} the config declares, plus any hooks.
  */
-function configToOptions(
-	config: Readonly<Record<string, unknown>>,
-	configDir: string,
-): Partial<WriteImportMapOptions> {
+function configToOptions(config: Readonly<Record<string, unknown>>, configDir: string): Config {
 	const result: {
 		root?: string | URL;
 		manifest?: string;
@@ -107,14 +118,16 @@ function configToOptions(
 		packages?: Record<string, string>;
 		additionalImports?: Record<string, string>;
 		scopes?: Record<string, Record<string, string>>;
+		hooks?: Partial<ImportMapHooks>;
 	} = {};
 
 	const root = asPath(config.root);
-	if (root !== undefined) {
-		result.root =
-			typeof root === 'string' && !path.isAbsolute(root) && !root.startsWith('file://')
-				? path.resolve(configDir, root)
-				: root;
+	if (root === undefined) {
+		result.root = configDir;
+	} else if (typeof root === 'string' && !path.isAbsolute(root) && !root.startsWith('file://')) {
+		result.root = path.resolve(configDir, root);
+	} else {
+		result.root = root;
 	}
 	const manifest = asString(config.manifest);
 	if (manifest !== undefined) result.manifest = manifest;
@@ -132,6 +145,8 @@ function configToOptions(
 	if (additionalImports !== undefined) result.additionalImports = additionalImports;
 	const scopes = asScopes(config.scopes);
 	if (scopes !== undefined) result.scopes = scopes;
+	const hooks = asHooks(config.hooks);
+	if (hooks !== undefined) result.hooks = hooks;
 
 	return result;
 }

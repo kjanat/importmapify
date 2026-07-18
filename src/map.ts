@@ -40,8 +40,35 @@ interface WriteImportMapOptions extends CreateImportMapOptions {
 	readonly out?: string | URL;
 }
 
-/** An importmapify config: the shape a config file's default export and {@linkcode defineConfig} take. */
-type Config = WriteImportMapOptions;
+/** Resolved paths shared by every generation hook. */
+interface HookContext {
+	/** Absolute project root that gets scanned. */
+	readonly root: string;
+	/** Absolute output path the map resolves against. */
+	readonly out: string;
+}
+
+/**
+ * Lifecycle hooks the CLI runs around import map generation, modeled on tsdown's hooks.
+ *
+ * Each hook may be async; the CLI awaits it. The synchronous library functions ignore hooks.
+ */
+interface ImportMapHooks {
+	/** Runs before the filesystem is scanned. Build pattern targets here so they exist when patterns expand. */
+	readonly 'generate:before': (context: HookContext) => void | Promise<void>;
+	/** Runs after the map is generated and emitted. */
+	readonly 'generate:done': (context: HookContext & { readonly map: ImportMapDocument }) => void | Promise<void>;
+}
+
+/**
+ * An importmapify config file: the shape a config file's default export and {@linkcode defineConfig} take.
+ * Every field is optional; the config loader and CLI supply {@linkcode CreateImportMapOptions.root | root}
+ * and the remaining defaults.
+ */
+interface Config extends Partial<WriteImportMapOptions> {
+	/** Lifecycle hooks the CLI runs around generation. Ignored by {@link writeImportMap} and {@link createImportMap}. */
+	readonly hooks?: Partial<ImportMapHooks>;
+}
 
 const DEFAULT_CONDITIONS = ['import', 'default'] as const;
 const DEFAULT_OUT = 'import_map.json';
@@ -318,12 +345,29 @@ function packageEntries(name: string, target: string): Record<string, string> {
  * writeImportMap(config);
  * ```
  *
- * @param config Import map configuration, with an optional `out`.
- * @returns The same `config` value, typed as {@link Config}.
+ * @param config Import map configuration; every field is optional.
+ * @returns The same `config` value with its exact type preserved, so a config that includes `root` stays
+ * assignable to {@link writeImportMap} while one that omits it is still a valid config file.
  */
-function defineConfig(config: Config): Config {
+function defineConfig<T extends Config>(config: T): T {
 	return config;
 }
 
-export type { Config, CreateImportMapOptions, ImportMapDocument, WriteImportMapOptions };
-export { createImportMap, DEFAULT_OUT, defineConfig, formatImportMap, packageEntries, resolveOut, writeImportMap };
+export type {
+	Config,
+	CreateImportMapOptions,
+	HookContext,
+	ImportMapDocument,
+	ImportMapHooks,
+	WriteImportMapOptions,
+};
+export {
+	createImportMap,
+	DEFAULT_OUT,
+	defineConfig,
+	formatImportMap,
+	packageEntries,
+	resolveOut,
+	toPath,
+	writeImportMap,
+};
