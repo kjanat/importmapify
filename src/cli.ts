@@ -1,11 +1,23 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { cwd } from 'node:process';
+import { bold, cyan } from 'ansispeck';
 import type { AnyCommandBuilder } from 'dreamcli';
 import { CLIError, command, flag } from 'dreamcli';
 import { configToOptions, discoverConfig, loadConfig, mergeScopes } from '#src/config';
 import type { WriteImportMapOptions } from '#src/map';
 import { createImportMap, DEFAULT_OUT, formatImportMap, resolveOut, writeImportMap } from '#src/map';
+
+const EXAMPLE_TOKEN = /(?:'[^']*'|"[^"]*"|\S)+/g;
+
+// dreamcli renders example commands unstyled (kjanat/dreamcli#65).
+function highlightExample(example: string): string {
+	const tokens = example.match(EXAMPLE_TOKEN);
+	if (tokens === null) return example;
+	return tokens
+		.map((token, index) => (index === 0 ? bold(token) : token.startsWith('-') ? cyan(token) : token))
+		.join(' ');
+}
 
 function parseKeyValue(raw: string, flagName: string, code: string): readonly [string, string] {
 	const eq = raw.indexOf('=');
@@ -181,15 +193,18 @@ export const generateCommand: AnyCommandBuilder = command('generate')
 	.flag('no-config', flag.boolean().describe('Skip config file discovery.'))
 	.flag('check', flag.boolean().describe('Exit 1 if the output file is stale instead of writing it.'))
 	.flag('stdout', flag.boolean().describe('Print the import map to stdout instead of writing it.'))
-	.example('importmapify --stdout', 'Print the generated import map')
+	.flag('quiet', flag.boolean().describe('Suppress the confirmation message on stderr.').alias('q'))
+	.example(highlightExample('importmapify --stdout'), 'Print the generated import map')
 	.example(
-		`importmapify --package 'dreamcli=jsr:@kjanat/dreamcli@^3' --scope './tests/::dreamcli/testkit=jsr:@kjanat/dreamcli@^3/testkit'`,
+		highlightExample(
+			`importmapify --package 'dreamcli=jsr:@kjanat/dreamcli@^3' --scope './tests/::dreamcli/testkit=jsr:@kjanat/dreamcli@^3/testkit'`,
+		),
 		'Add global and test-scoped dependencies',
 	)
-	.example('importmapify --check', 'Fail when the generated file is stale')
+	.example(highlightExample('importmapify --check'), 'Fail when the generated file is stale')
 	.action(async ({ flags, out }) => {
-		const { log, error, setExitCode } = out;
-		const { check, stdout } = flags;
+		const { log, warn, error, setExitCode } = out;
+		const { check, stdout, quiet } = flags;
 
 		if (check && stdout) {
 			throw new CLIError('--check and --stdout are mutually exclusive', {
@@ -215,10 +230,10 @@ export const generateCommand: AnyCommandBuilder = command('generate')
 				setExitCode(1);
 				return;
 			}
-			log(`${outPath} is up to date`);
+			if (!quiet) warn(`${outPath} is up to date`);
 			return;
 		}
 
 		const written = writeImportMap(options);
-		log(`Wrote ${written}`);
+		if (!quiet) warn(`Wrote ${written}`);
 	});

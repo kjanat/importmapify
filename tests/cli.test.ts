@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import process from 'node:process';
+import { strip } from 'ansispeck';
 import { runCommand } from 'dreamcli/testkit';
 import { generateCommand } from '#src/cli.ts';
 
@@ -29,7 +30,7 @@ function fixture(imports: Readonly<Record<string, unknown>>, files: readonly str
 describe('generateCommand', () => {
 	it('shows generation, scope, and freshness examples in help', async () => {
 		const result = await runCommand(generateCommand, ['--help']);
-		const help = result.stdout.join('\n');
+		const help = strip(result.stdout.join('\n'));
 		expect(help).toContain('Examples:');
 		expect(help).toContain('importmapify --stdout');
 		expect(help).toContain("--scope './tests/::dreamcli/testkit=");
@@ -41,7 +42,7 @@ describe('generateCommand', () => {
 		const result = await runCommand(generateCommand, ['--root', root]);
 
 		expect(result.exitCode).toBe(0);
-		expect(result.stdout.some((line) => line.includes('Wrote'))).toBe(true);
+		expect(result.stderr.some((line) => line.includes('Wrote'))).toBe(true);
 		expect(JSON.parse(fs.readFileSync(path.join(root, 'import_map.json'), 'utf8'))).toEqual({
 			imports: { '#config': './src/config.ts' },
 		});

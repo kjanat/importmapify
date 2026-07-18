@@ -5,6 +5,7 @@
     "": {
       "name": "importmapify",
       "dependencies": {
+        "ansispeck": "^0.2.0",
         "dreamcli": "npm:@kjanat/dreamcli@^3.0.0-rc.11",
       },
       "devDependencies": {
