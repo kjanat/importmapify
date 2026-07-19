@@ -32,18 +32,22 @@ section.section:has(> div > h2 .contextLink) {
 		position: static;
 		width: 100%;
 		height: auto;
-		padding: 0.75rem 1.5rem 0;
+		padding: 0.5rem 1rem;
 		box-sizing: border-box;
 	}
 
 	#categoryPanel > ul {
 		display: flex;
-		flex-wrap: wrap;
-		gap: 0.25rem 1.25rem;
+		flex-wrap: nowrap;
+		align-items: center;
+		gap: 1rem;
+		overflow-x: auto;
 	}
 
 	#categoryPanel > ul > li {
 		margin-top: 0 !important;
+		white-space: nowrap;
+		flex-shrink: 0;
 	}
 
 	#topnav {
@@ -57,5 +61,19 @@ section.section:has(> div > h2 .contextLink) {
 
 	#topnav .h-full > div:first-child {
 		flex: 1 1 100%;
+	}
+
+	#topnav .h-full > div:not(:first-child) {
+		flex: 1 1 auto;
+	}
+
+	#searchbar {
+		flex: 1 1 auto;
+		min-width: 0;
+	}
+
+	.symbolTitle .break-all {
+		word-break: normal;
+		overflow-wrap: anywhere;
 	}
 }

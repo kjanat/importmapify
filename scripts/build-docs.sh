@@ -25,4 +25,5 @@ deno doc --json $(jq -r '.exports | .[]? // .' deno.json) >"$tmp/nodes.json" 2>/
 bun scripts/link-source-buttons.mjs .denodocs "$tmp/nodes.json" "$(git rev-parse HEAD)"
 bun scripts/inject-assets.mjs .denodocs assets
 bun scripts/escape-percent-links.mjs .denodocs
+bun scripts/hash-assets.mjs .denodocs
 bunx vite-svg-to-ico generate assets/favicon.svg --out-dir .denodocs
