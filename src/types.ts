@@ -11,6 +11,7 @@
  *   scopes: { './tests/': { '#lib/bytes': './tests/stub/bytes.ts' } },
  * };
  * ```
+ * @category Generate
  */
 interface ImportMapDocument {
 	/**
@@ -45,6 +46,7 @@ interface ImportMapDocument {
  *
  * const root: PathOrUrl = new URL('..', import.meta.url);
  * ```
+ * @category Options
  */
 type PathOrUrl = string | URL;
 
@@ -59,6 +61,7 @@ type PathOrUrl = string | URL;
  * // Drop hashed internal chunks like ./dist/internal-qo9O8jzH.js.
  * const filter: readonly TargetFilter[] = [/^(?!.*internal)/];
  * ```
+ * @category Options
  */
 type TargetFilter = RegExp | ((target: string) => boolean);
 
@@ -77,6 +80,7 @@ type TargetFilter = RegExp | ((target: string) => boolean);
  *
  * createImportMap(options);
  * ```
+ * @category Options
  */
 interface CreateImportMapOptions {
 	/**
@@ -197,6 +201,7 @@ interface CreateImportMapOptions {
  *
  * writeImportMap(options);
  * ```
+ * @category Options
  */
 interface WriteImportMapOptions extends CreateImportMapOptions {
 	/**
@@ -236,6 +241,7 @@ interface WriteImportMapOptions extends CreateImportMapOptions {
  *
  * const logRoot = (ctx: HookContext) => console.log(`scanning ${ctx.root}, writing ${ctx.out}`);
  * ```
+ * @category Configuration
  */
 interface HookContext {
 	/**
@@ -275,6 +281,7 @@ interface HookContext {
  *   },
  * });
  * ```
+ * @category Configuration
  */
 interface ImportMapHooks {
 	/**
@@ -312,6 +319,7 @@ interface ImportMapHooks {
  *   extensions: ['ts'],
  * });
  * ```
+ * @category Configuration
  */
 interface Config extends Partial<WriteImportMapOptions> {
 	/**

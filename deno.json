@@ -20,22 +20,34 @@
 	"license": "MIT",
 	"tasks": {
 		"build": {
-			"description": "build for npm distribution",
-			"command": "bun run build",
-			"files": ["src/**", "package.json", "bun.lock"],
-			"output": ["dist/**", "deno.json"]
+			"description": "build for npm distribution (requires bun)",
+			"command": "bun run build"
 		},
 		"publish": {
 			"command": "deno publish --config deno.json --allow-dirty",
-			"description": "Publish package to jsr",
-			"dependencies": ["importmapify"]
+			"description": "Publish package to jsr"
 		},
 		"importmapify": {
-			"description": "generate importmap for deno",
-			"command": "bun scripts/generate-importmap.ts",
-			"files": ["package.json", "scripts/generate-importmap.ts", "src/**"],
-			"output": ["import_map.json"]
-		}
+			"description": "generate importmap for deno (requires bun)",
+			"command": "bun scripts/generate-importmap.ts"
+		},
+		"doc:html": {
+			"command": "sh -c 'set -e; root=$PWD; [ -f dist/mod.d.mts ] || bun run build; tmp=$(mktemp -d); { awk \"NR>1{print} /\\*\\//{if(NR>1) exit}\" src/mod.ts; cat dist/mod.d.mts; } > \"$tmp/importmapify.d.ts\"; cd \"$tmp\"; deno doc --html --name=\"$(jq -r .name \"$root/package.json\")\" --category-docs=\"$root/category-docs.json\" --output=\"$root/.denodocs/\" ./importmapify.d.ts; bun \"$root/scripts/strip-source-buttons.mjs\" \"$root/.denodocs\"; rm -rf \"$tmp\"'",
+			"description": "generate categorized HTML docs into .denodocs (requires bun)"
+		},
+		"doc:json": {
+			"command": "mkdir -p .denodocs && deno doc --name=\"$(jq -r .name package.json)\" --json $(jq -r '.exports | .[]? // .' deno.json) > .denodocs/documentation.json",
+			"description": "emit JSON doc nodes into .denodocs"
+		},
+		"doc:lint": {
+			"command": "deno doc --lint $(jq -r '.exports | .[]? // .' deno.json)",
+			"description": "lint docs on exported symbols"
+		},
+		"format:docs": {
+			"command": "bunx dprint fmt --includes-override '.denodocs/**/*.{html,css,js,json}' --excludes-override='!.denodocs/**/*.{html,css,js,json}' --no-gitignore --allow-no-files",
+			"description": "format the output docs (requires bun)"
+		},
+		"ci:docs": "run -s doc:html doc:json format:docs"
 	},
 	"lint": {
 		"rules": {

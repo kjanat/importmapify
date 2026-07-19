@@ -1,0 +1,5 @@
+{
+	"Generate": "Create an import map in memory, serialize it, or write it to disk.",
+	"Options": "Option shapes and value types accepted by the generate functions.",
+	"Configuration": "Config-file shapes and the lifecycle hooks the CLI runs around generation."
+}

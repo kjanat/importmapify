@@ -1,0 +1,27 @@
+name: Deno doc
+on: { push: { branches: [master], tags: ["v*.*.*"] }, workflow_dispatch: null }
+permissions: { contents: read }
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    env: { DENO_NO_PACKAGE_JSON: 1 }
+    concurrency: { group: "pages-build-${{ github.ref }}", cancel-in-progress: true }
+    steps: [
+      uses: actions/checkout@v7,
+      uses: oven-sh/setup-bun@v2,
+      uses: denoland/setup-deno@v2,
+      uses: kjanat/runner@master,
+      run: runner install deno:ci:docs,
+      { uses: actions/upload-pages-artifact@v5, with: { path: .denodocs } },
+    ]
+  deploy:
+    name: Deploy
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    concurrency: { group: pages-deploy, cancel-in-progress: false }
+    permissions: { pages: write, id-token: write }
+    environment: { name: github-pages, url: "${{ steps.deploy.outputs.page_url }}" }
+    steps: [{ id: deploy, uses: actions/deploy-pages@v5 }]

@@ -23,7 +23,7 @@
 		"json.indentWidth": 2,
 		"json.indentStyle": "tab",
 		"json.lineWidth": 100,
-		"associations": ["package.json"]
+		"associations": ["**/*.{json,jsonc}", "package.json"]
 	},
 	"yaml": { "printWidth": 200 },
 	"exec": {
@@ -48,6 +48,7 @@
 		"npm:@dprint/exec@0.7.3/plugin.json@704701df449dd7e942a71144773778ac529d68c2e4657bfc236d393b898b9a67",
 		"npm:@dprint/biome@0.13.2",
 		"npm:@dprint/markdown@0.22.1",
-		"https://plugins.dprint.dev/g-plane/pretty_yaml-v0.6.0.wasm"
+		"https://plugins.dprint.dev/g-plane/pretty_yaml-v0.6.0.wasm",
+		"https://plugins.dprint.dev/g-plane/markup_fmt-v0.27.3.wasm"
 	]
 }

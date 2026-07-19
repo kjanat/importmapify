@@ -58,7 +58,10 @@ export default defineConfig({
 			execFileSync('dprint', ['fmt', 'package.json'], { stdio: 'ignore' });
 
 			const denoPath = new URL('./deno.json', import.meta.url);
-			const denoConfig: unknown = JSON.parse(await fs.readFile(denoPath, { encoding: 'utf8' }));
+			const denoJson = await fs
+				.readFile(denoPath, { encoding: 'utf8' })
+				.catch(() => execFileSync('git', ['show', 'HEAD:deno.json'], { encoding: 'utf8' }));
+			const denoConfig: unknown = JSON.parse(denoJson);
 			if (typeof denoConfig !== 'object' || denoConfig === null || Array.isArray(denoConfig)) {
 				throw new TypeError('deno.json must contain an object');
 			}

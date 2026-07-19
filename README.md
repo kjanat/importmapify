@@ -21,12 +21,14 @@ per matched source file instead. This package performs that expansion and writes
 
 ```sh
 npm install importmapify
+deno add jsr:@kjanat/importmapify
 ```
 
 ## CLI
 
 ```sh
 npx importmapify --root . --out import_map.json
+deno run -A jsr:@kjanat/importmapify [...]
 ```
 
 | Flag                        | Alias | Meaning                                                                   | Default             |

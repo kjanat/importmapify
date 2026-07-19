@@ -205,6 +205,7 @@ function rebaseScopePrefix(root: string, relativeTo: string, scope: string): str
  *
  * @param options Project, manifest, condition, and rebasing options.
  * @returns A sorted import map document.
+ * @category Generate
  */
 function createImportMap(options: CreateImportMapOptions): ImportMapDocument {
 	const root = toPath(options.root);
@@ -250,6 +251,7 @@ function createImportMap(options: CreateImportMapOptions): ImportMapDocument {
  * @param map Import map to serialize.
  * @param indent Indentation with `JSON.stringify` space semantics; defaults to a tab.
  * @returns Formatted JSON ready to print or write.
+ * @category Generate
  */
 function formatImportMap(map: ImportMapDocument, indent: string | number = '\t'): string {
 	return `${JSON.stringify(map, null, indent)}\n`;
@@ -272,6 +274,7 @@ function formatImportMap(map: ImportMapDocument, indent: string | number = '\t')
  *
  * @param options Creation options plus the optional output path.
  * @returns The absolute path of the written file.
+ * @category Generate
  */
 function writeImportMap(options: WriteImportMapOptions): string {
 	const out = resolveOut(options.root, options.out ?? DEFAULT_OUT);
@@ -304,6 +307,7 @@ function directoryTarget(target: string): string {
  * @param name Bare package specifier.
  * @param target Exact target for {@link name}.
  * @returns The bare entry and its trailing-slash subpath entry.
+ * @category Generate
  */
 function packageEntries(name: string, target: string): Record<string, string> {
 	return { [name]: target, [`${name}/`]: directoryTarget(target) };
@@ -341,6 +345,7 @@ function packageEntries(name: string, target: string): Record<string, string> {
  * @param config Import map configuration; every field is optional.
  * @returns The same {@linkcode config} value with its exact type preserved, so a config that includes {@linkcode CreateImportMapOptions.root} stays
  * assignable to {@link writeImportMap} while one that omits it is still a valid config file.
+ * @category Configuration
  */
 function defineConfig<T extends Config>(config: T): T {
 	return config;
