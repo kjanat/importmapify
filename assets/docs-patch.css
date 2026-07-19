@@ -133,13 +133,14 @@ section.section:has(> div > h2 .contextLink):not(section.section:has(> div > h2 
 	}
 
 	#topnav .h-full {
-		flex-wrap: nowrap;
+		flex-wrap: wrap;
 		gap: 0.5rem;
+		row-gap: 0.4rem;
 		align-items: center;
 	}
 
 	#topnav .h-full > div:first-child {
-		flex: 0 1 auto;
+		flex: 1 1 100%;
 		min-width: 0;
 		overflow: hidden;
 	}
@@ -166,7 +167,7 @@ section.section:has(> div > h2 .contextLink):not(section.section:has(> div > h2 
 
 	#searchbar {
 		flex: 1 1 auto;
-		min-width: 4rem;
+		min-width: 0;
 	}
 
 	.symbolTitle .break-all {
