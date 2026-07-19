@@ -40,9 +40,14 @@ section.section:has(> div > h2 .contextLink):not(section.section:has(> div > h2 
 	display: none;
 }
 
+.catToggle {
+	display: none;
+}
+
 @media (width < 1024px) {
 	.ddoc:has(#categoryPanel) {
 		flex-direction: column;
+		position: relative;
 	}
 
 	.ddoc > div:not(#categoryPanel) {
@@ -55,48 +60,29 @@ section.section:has(> div > h2 .contextLink):not(section.section:has(> div > h2 
 		position: static;
 		width: 100%;
 		height: auto;
-		padding: 0.75rem 1rem 0;
+		padding: 0;
 		box-sizing: border-box;
 	}
 
-	.catNav summary {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.4rem;
-		padding: 0.35rem 0.9rem;
-		border: 1px solid rgb(209 213 219);
-		border-radius: 9999px;
-		background: rgb(249 250 251);
-		font-size: 0.875rem;
-		font-weight: 500;
-		cursor: pointer;
-		user-select: none;
-		list-style: none;
-	}
-
-	.catNav summary::-webkit-details-marker {
-		display: none;
-	}
-
-	.catNav summary::after {
-		content: "\25BE";
-		transition: transform 0.15s ease;
-	}
-
-	.catNav[open] summary::after {
-		transform: rotate(180deg);
-	}
-
-	.dark .catNav summary {
-		border-color: rgb(55 65 81);
-		background: rgb(31 41 55);
-	}
-
 	.catNav > ul {
+		position: absolute;
+		top: 3.4rem;
+		left: 0.75rem;
+		right: 0.75rem;
+		z-index: 40;
 		display: flex;
 		flex-wrap: wrap;
 		gap: 0.5rem;
-		padding: 0.75rem 0 0.25rem;
+		padding: 0.75rem;
+		border: 1px solid rgb(209 213 219);
+		border-radius: 0.75rem;
+		background: rgb(255 255 255);
+		box-shadow: 0 8px 24px rgb(0 0 0 / 0.12);
+	}
+
+	.dark .catNav > ul {
+		border-color: rgb(55 65 81);
+		background: rgb(17 24 39);
 	}
 
 	.catNav > ul > li {
@@ -128,21 +114,55 @@ section.section:has(> div > h2 .contextLink):not(section.section:has(> div > h2 
 		background: rgb(55 65 81);
 	}
 
+	.catToggle {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 2.4rem;
+		height: 2.4rem;
+		flex: 0 0 auto;
+		border: 1px solid rgb(209 213 219);
+		border-radius: 0.5rem;
+		background: rgb(249 250 251);
+		font-size: 1.2rem;
+		line-height: 1;
+		cursor: pointer;
+	}
+
+	.dark .catToggle {
+		border-color: rgb(55 65 81);
+		background: rgb(31 41 55);
+		color: rgb(229 231 235);
+	}
+
 	#topnav {
 		height: auto;
 	}
 
 	#topnav .h-full {
-		flex-wrap: wrap;
+		flex-wrap: nowrap;
 		gap: 0.5rem;
-		row-gap: 0.4rem;
 		align-items: center;
 	}
 
 	#topnav .h-full > div:first-child {
-		flex: 1 1 100%;
+		flex: 0 1 auto;
 		min-width: 0;
 		overflow: hidden;
+	}
+
+	#topnav .h-full > div:has(#searchbar) {
+		flex: 1 1 auto;
+		order: 1;
+	}
+
+	#topnav .h-full > div:not(:first-child):not(:has(#searchbar)) {
+		flex: 0 0 auto;
+		order: 2;
+	}
+
+	.catToggle {
+		order: 3;
 	}
 
 	#topnav .breadcrumbs {
@@ -171,13 +191,10 @@ section.section:has(> div > h2 .contextLink):not(section.section:has(> div > h2 
 		text-overflow: ellipsis;
 	}
 
-	#topnav .h-full > div:not(:first-child) {
-		flex: 1 1 auto;
-	}
-
 	#searchbar {
 		flex: 1 1 auto;
-		min-width: 0;
+		min-width: 3rem;
+		width: 100%;
 	}
 
 	.symbolTitle .break-all {

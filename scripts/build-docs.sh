@@ -22,5 +22,5 @@ trap 'rm -rf "$tmp"' EXIT
 )
 
 deno doc --json $(jq -r '.exports | .[]? // .' deno.json) >"$tmp/nodes.json" 2>/dev/null
-bun scripts/transform-docs.mjs .denodocs "$tmp/nodes.json" "$(git rev-parse HEAD)" assets
+bun scripts/transform-docs.ts .denodocs "$tmp/nodes.json" "$(git rev-parse HEAD)" assets
 bunx vite-svg-to-ico generate assets/favicon.svg --out-dir .denodocs
