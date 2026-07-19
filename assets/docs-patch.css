@@ -24,7 +24,7 @@ section.section:has(> div > h2 .contextLink):not(section.section:has(> div > h2 
 }
 
 section.section:has(> div > h2 .contextLink):not(section.section:has(> div > h2 .contextLink) + *)::before {
-	content: 'Categories';
+	content: "Categories";
 	display: block;
 	font-size: 1.5rem;
 	font-weight: 700;
@@ -64,9 +64,12 @@ section.section:has(> div > h2 .contextLink):not(section.section:has(> div > h2 
 	}
 
 	#categoryPanel > ul > li {
-		margin-top: 0 !important;
 		white-space: nowrap;
 		flex-shrink: 0;
+	}
+
+	#categoryPanel ul > :not([hidden]) ~ :not([hidden]) {
+		margin-top: 0;
 	}
 
 	#topnav {
