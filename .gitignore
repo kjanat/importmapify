@@ -14,3 +14,4 @@ yarn.lock
 jsr.json
 deno.lock
 /.denodocs/
+.playwright-mcp/
