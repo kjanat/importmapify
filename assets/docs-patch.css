@@ -48,11 +48,14 @@ section.section:has(> div > h2 .contextLink):not(section.section:has(> div > h2 
 	.ddoc:has(#categoryPanel) {
 		flex-direction: column;
 		position: relative;
+		padding: 0.5rem;
 	}
 
-	.ddoc > div:not(#categoryPanel) {
+	.ddoc:has(#categoryPanel) > div:not(#categoryPanel) {
 		width: 100%;
 		box-sizing: border-box;
+		padding-left: 0.75rem;
+		padding-right: 0.75rem;
 	}
 
 	#categoryPanel {
@@ -148,6 +151,7 @@ section.section:has(> div > h2 .contextLink):not(section.section:has(> div > h2 
 	#topnav .h-full > div:first-child {
 		flex: 0 1 auto;
 		min-width: 0;
+		max-width: 50%;
 		overflow: hidden;
 	}
 
