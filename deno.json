@@ -32,7 +32,7 @@
 			"command": "bun scripts/generate-importmap.ts"
 		},
 		"doc:html": {
-			"command": "sh -c 'set -e; root=$PWD; [ -f dist/mod.d.mts ] || bun run build; tmp=$(mktemp -d); { awk \"NR>1{print} /\\*\\//{if(NR>1) exit}\" src/mod.ts; cat dist/mod.d.mts; } > \"$tmp/importmapify.d.ts\"; cd \"$tmp\"; deno doc --html --name=\"$(jq -r .name \"$root/package.json\")\" --category-docs=\"$root/category-docs.json\" --output=\"$root/.denodocs/\" ./importmapify.d.ts; bun \"$root/scripts/strip-source-buttons.mjs\" \"$root/.denodocs\"; rm -rf \"$tmp\"'",
+			"command": "sh -c 'set -e; root=$PWD; [ -f dist/mod.d.mts ] || bun run build; tmp=$(mktemp -d); { awk \"NR>1{print} /\\*\\//{if(NR>1) exit}\" src/mod.ts; cat dist/mod.d.mts; } > \"$tmp/importmapify.d.ts\"; cd \"$tmp\"; deno doc --html --name=\"$(jq -r .name \"$root/package.json\")\" --category-docs=\"$root/category-docs.json\" --output=\"$root/.denodocs/\" ./importmapify.d.ts; cd \"$root\"; deno doc --json $(jq -r \".exports | .[]? // .\" deno.json) > \"$tmp/nodes.json\" 2>/dev/null; bun scripts/link-source-buttons.mjs .denodocs \"$tmp/nodes.json\" \"$(git rev-parse HEAD)\"; bun scripts/inject-favicon.mjs .denodocs assets/favicon.svg; bunx vite-svg-to-ico generate assets/favicon.svg --out-dir .denodocs; rm -rf \"$tmp\"'",
 			"description": "generate categorized HTML docs into .denodocs (requires bun)"
 		},
 		"doc:json": {
