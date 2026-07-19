@@ -2,7 +2,9 @@
 set -euo pipefail
 
 root=$PWD
-[ -f dist/mod.d.mts ] || bun run build
+if [ ! -f dist/mod.d.mts ] || [ -n "$(find src package.json -newer dist/mod.d.mts -print -quit)" ]; then
+	bun run build
+fi
 
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT

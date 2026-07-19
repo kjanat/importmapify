@@ -149,7 +149,7 @@ interface CreateImportMapOptions {
 	 *
 	 * Manifest targets are written relative to {@link root}, but Deno resolves an import map's relative targets
 	 * from the location of the map file. Each relative target is rewritten to be relative to this directory
-	 * instead, so it still points at the right file once the map moves. `writeImportMap` and the CLI set
+	 * instead, so it still points at the right file once the map moves. {@link writeImportMap} and the CLI set
 	 * this automatically to the output file's directory; set it yourself only when placing an in-memory map
 	 * somewhere other than {@link root}. Defaults to {@link root}.
 	 *
@@ -305,7 +305,7 @@ interface ImportMapHooks {
 }
 
 /**
- * An importmapify config file: the shape a config file's default export and `defineConfig` take.
+ * An importmapify config file: the shape a config file's default export and {@linkcode defineConfig} take.
  * Every field is optional; the config loader and CLI supply {@linkcode CreateImportMapOptions.root | root}
  * and the remaining defaults.
  *
@@ -323,7 +323,7 @@ interface ImportMapHooks {
  */
 interface Config extends Partial<WriteImportMapOptions> {
 	/**
-	 * Lifecycle hooks the CLI runs around generation. Ignored by `writeImportMap` and `createImportMap`.
+	 * Lifecycle hooks the CLI runs around generation. Ignored by {@link writeImportMap} and {@link createImportMap}.
 	 *
 	 * @example
 	 * ```ts
