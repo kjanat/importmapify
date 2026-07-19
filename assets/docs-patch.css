@@ -7,6 +7,16 @@
 	max-width: 100%;
 }
 
+section.section:has(> div > h2 .contextLink) {
+	border-top: 1px solid rgb(209 213 219);
+	margin-top: 1.25rem;
+	padding-top: 1.25rem;
+}
+
+.dark section.section:has(> div > h2 .contextLink) {
+	border-color: rgb(55 65 81);
+}
+
 @media (width < 1024px) {
 	.ddoc:has(#categoryPanel) {
 		flex-direction: column;
