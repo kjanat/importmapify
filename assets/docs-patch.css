@@ -143,66 +143,50 @@ section.section:has(> div > h2 .contextLink):not(section.section:has(> div > h2 
 	}
 
 	#topnav .h-full {
-		flex-wrap: nowrap;
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto auto;
 		gap: 0.5rem;
 		align-items: center;
 	}
 
 	#topnav .h-full > div:first-child {
-		flex: 0 1 auto;
 		min-width: 0;
-		max-width: 50%;
 		overflow: hidden;
 	}
 
-	#topnav .h-full > div:has(#searchbar) {
-		flex: 1 1 auto;
-		order: 1;
-	}
-
-	#topnav .h-full > div:not(:first-child):not(:has(#searchbar)) {
-		flex: 0 0 auto;
-		order: 2;
-	}
-
-	.catToggle {
-		order: 3;
+	#topnav .breadcrumbs :is(li, a, ul, span) {
+		font-size: 1.25rem;
 	}
 
 	#topnav .breadcrumbs {
-		display: flex;
-		flex-wrap: nowrap;
-		align-items: center;
-		overflow: hidden;
-		gap: 0.25rem;
-	}
-
-	#topnav .breadcrumbs > * {
-		flex: 0 0 auto;
+		display: block;
 		white-space: nowrap;
-	}
-
-	#topnav .breadcrumbs > :first-child {
-		flex: 0 1 auto;
 		overflow: hidden;
 		text-overflow: ellipsis;
 	}
 
-	#topnav .breadcrumbs > :last-child {
-		flex: 0 1 auto;
-		min-width: 8ch;
-		overflow: hidden;
-		text-overflow: ellipsis;
+	#topnav .breadcrumbs li,
+	#topnav .breadcrumbs ul {
+		display: inline;
+	}
+
+	#topnav .breadcrumbs span {
+		display: inline-block;
+		vertical-align: middle;
 	}
 
 	#searchbar {
-		flex: 1 1 auto;
-		min-width: 3rem;
-		width: 100%;
+		width: 6rem;
+		min-width: 0;
 	}
 
 	.symbolTitle .break-all {
 		word-break: normal;
 		overflow-wrap: anywhere;
+	}
+
+	.markdown pre {
+		margin-left: 0;
+		margin-right: 0;
 	}
 }

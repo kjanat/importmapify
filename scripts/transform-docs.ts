@@ -58,7 +58,7 @@ const LOCAL_ENCODED_TARGET = /(["'/])((?:[^"'<>\s]*%[0-9A-Fa-f]{2})+[^"'<>\s]*\.
 const MEMBER_PREFIX = /^(property|method|call_signature|constructor)_/;
 
 const NAV_SCRIPT =
-	'<script>(()=>{const d=document.querySelector("details.catNav");if(!d)return;if(matchMedia("(width < 1024px)").matches)d.open=false;const t=document.querySelector(".catToggle");t?.addEventListener("click",()=>{d.open=!d.open;t.setAttribute("aria-expanded",String(d.open))})})()</script>';
+	'<script>(()=>{const d=document.querySelector("details.catNav");if(!d)return;const mq=matchMedia("(width < 1024px)");if(mq.matches)d.open=false;mq.addEventListener("change",(e)=>{d.open=!e.matches});const t=document.querySelector(".catToggle");const nav=document.getElementById("topnav");t?.addEventListener("click",()=>{d.open=!d.open;t.setAttribute("aria-expanded",String(d.open));const u=d.querySelector("ul");const box=d.closest(".ddoc");if(d.open&&u&&nav&&box){u.style.top=String(nav.getBoundingClientRect().bottom-box.getBoundingClientRect().top+8)+"px"}});document.addEventListener("click",(e)=>{if(d.open&&e.target instanceof Node&&!d.contains(e.target)&&!t.contains(e.target)){d.open=false;t.setAttribute("aria-expanded","false")}})})()</script>';
 
 const CAT_TOGGLE =
 	'<button class="catToggle" type="button" aria-label="Categories" aria-expanded="false">≡</button>';
@@ -131,6 +131,10 @@ function hashCssHref(href: string): string {
 	return href;
 }
 
+function plainSlashes(href: string): string {
+	return href.replaceAll('&#x2F;', '/');
+}
+
 function transformHtml(html: string, depth: number): string {
 	const prefix = '../'.repeat(depth);
 	let lastSymbolId: string | undefined;
@@ -149,13 +153,19 @@ function transformHtml(html: string, depth: number): string {
 		.on('link[href]', {
 			element(el) {
 				const href = el.getAttribute('href');
-				if (href) el.setAttribute('href', hashCssHref(href));
+				if (href) el.setAttribute('href', plainSlashes(hashCssHref(href)));
 			},
 		})
 		.on('a[href]', {
 			element(el) {
 				const href = el.getAttribute('href');
-				if (href) el.setAttribute('href', escapeEncodedTarget(href));
+				if (href) el.setAttribute('href', plainSlashes(escapeEncodedTarget(href)));
+			},
+		})
+		.on('script[src], img[src]', {
+			element(el) {
+				const src = el.getAttribute('src');
+				if (src) el.setAttribute('src', plainSlashes(src));
 			},
 		})
 		.on('[id]', {
