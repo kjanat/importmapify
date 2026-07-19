@@ -3,9 +3,10 @@ import { copyFileSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import path from 'node:path';
 import process from 'node:process';
 
-const [docsDir = '.denodocs', svgPath = 'assets/favicon.svg'] = process.argv.slice(2);
+const [docsDir = '.denodocs', assetsDir = 'assets'] = process.argv.slice(2);
 
-copyFileSync(svgPath, path.join(docsDir, 'favicon.svg'));
+copyFileSync(path.join(assetsDir, 'favicon.svg'), path.join(docsDir, 'favicon.svg'));
+copyFileSync(path.join(assetsDir, 'docs-patch.css'), path.join(docsDir, 'docs-patch.css'));
 
 function inject(dir, depth) {
 	for (const entry of readdirSync(dir, { withFileTypes: true })) {
@@ -15,8 +16,10 @@ function inject(dir, depth) {
 		} else if (entry.name.endsWith('.html')) {
 			const html = readFileSync(target, 'utf8');
 			if (!html.includes('rel="icon"')) {
-				const href = `${'../'.repeat(depth)}favicon.svg`;
-				const linked = html.replace('<head>', `<head><link rel="icon" type="image/svg+xml" href="${href}">`);
+				const prefix = '../'.repeat(depth);
+				const linked = html
+					.replace('<head>', `<head><link rel="icon" type="image/svg+xml" href="${prefix}favicon.svg">`)
+					.replace('</head>', `<link rel="stylesheet" href="${prefix}docs-patch.css"></head>`);
 				if (linked !== html) writeFileSync(target, linked);
 			}
 		}
