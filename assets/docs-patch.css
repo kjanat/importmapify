@@ -158,8 +158,15 @@ section.section:has(> div > h2 .contextLink):not(section.section:has(> div > h2 
 		white-space: nowrap;
 	}
 
+	#topnav .breadcrumbs > :first-child {
+		flex: 0 1 auto;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
 	#topnav .breadcrumbs > :last-child {
 		flex: 0 1 auto;
+		min-width: 8ch;
 		overflow: hidden;
 		text-overflow: ellipsis;
 	}
