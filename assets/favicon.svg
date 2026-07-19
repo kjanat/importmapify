@@ -1,4 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img">
+  <title>importmapify</title>
   <rect width="32" height="32" rx="7" fill="#111827" />
   <g fill="#f7df1e">
     <rect x="11" y="7" width="2.8" height="18" rx="1.4" />

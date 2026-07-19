@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-import { copyFileSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { copyFileSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 
@@ -14,10 +14,11 @@ function inject(dir, depth) {
 			inject(target, depth + 1);
 		} else if (entry.name.endsWith('.html')) {
 			const html = readFileSync(target, 'utf8');
-			if (html.includes('rel="icon"')) continue;
-			const href = `${'../'.repeat(depth)}favicon.svg`;
-			const linked = html.replace('<head>', `<head><link rel="icon" type="image/svg+xml" href="${href}">`);
-			if (linked !== html) writeFileSync(target, linked);
+			if (!html.includes('rel="icon"')) {
+				const href = `${'../'.repeat(depth)}favicon.svg`;
+				const linked = html.replace('<head>', `<head><link rel="icon" type="image/svg+xml" href="${href}">`);
+				if (linked !== html) writeFileSync(target, linked);
+			}
 		}
 	}
 }

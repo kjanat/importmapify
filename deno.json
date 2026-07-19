@@ -1,7 +1,7 @@
 {
 	"$schema": "https://raw.githubusercontent.com/denoland/deno/refs/heads/main/cli/schemas/config-file.v1.json",
 	"name": "@kjanat/importmapify",
-	"version": "1.5.0",
+	"version": "1.6.0",
 	"exports": "./src/mod.ts",
 	"publish": {
 		"include": [
@@ -55,7 +55,7 @@
 		}
 	},
 	"preferPackageJson": false,
-	"homepage": "https://github.com/kjanat/importmapify#readme",
+	"homepage": "https://importmapify.kjanat.dev",
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/kjanat/importmapify.git"

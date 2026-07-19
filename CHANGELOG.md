@@ -4,6 +4,24 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2026-07-19
+
+### Added
+
+- Documentation site at [importmapify.kjanat.dev](https://importmapify.kjanat.dev), generated with `deno doc` and
+  published via GitHub Pages. Symbols are grouped into Generate, Options, and Configuration categories with intro prose,
+  every source button links to a commit-pinned GitHub permalink for the exact symbol or member, and pages carry an SVG
+  favicon (with an `.ico` fallback in the site root).
+- `@category` and `@module` JSDoc on the public API, rendered by the site and by `deno doc`.
+- deno tasks for the docs pipeline: `doc:html`, `doc:json`, `doc:lint`, `format:docs`, and `ci:docs`.
+
+### Changed
+
+- `homepage` in `package.json` and `deno.json` now points at the documentation site.
+- Internal: option records in the config loader and CLI are derived from `WriteImportMapOptions` via mapped types
+  instead of hand-written copies.
+- The tsdown `build:done` hook falls back to the committed `deno.json` when the file is missing.
+
 ## [1.5.0] - 2026-07-18
 
 ### Added
@@ -115,6 +133,7 @@ All notable changes to this project are documented here. The format follows
   deterministically-sorted entries a Deno import map needs, so `deno doc`, `deno check`, and the Deno LSP can resolve
   Node-style subpath imports. Ships as both a library and a CLI.
 
+[1.6.0]: https://github.com/kjanat/importmapify/compare/v1.5.0...v1.6.0
 [1.5.0]: https://github.com/kjanat/importmapify/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/kjanat/importmapify/compare/v1.3.1...v1.4.0
 [1.3.1]: https://github.com/kjanat/importmapify/compare/v1.3.0...v1.3.1

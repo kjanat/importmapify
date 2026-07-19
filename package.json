@@ -1,6 +1,6 @@
 {
 	"name": "importmapify",
-	"version": "1.5.0",
+	"version": "1.6.0",
 	"description": "Expand package.json subpath-pattern imports into explicit Deno import map entries.",
 	"keywords": [
 		"deno",
@@ -11,7 +11,7 @@
 		"dreamcli",
 		"ansispeck"
 	],
-	"homepage": "https://github.com/kjanat/importmapify#readme",
+	"homepage": "https://importmapify.kjanat.dev",
 	"bugs": {
 		"url": "https://github.com/kjanat/importmapify/issues"
 	},
