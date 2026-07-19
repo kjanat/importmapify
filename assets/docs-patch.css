@@ -17,6 +17,25 @@ section.section:has(> div > h2 .contextLink) {
 	border-color: rgb(55 65 81);
 }
 
+section.section:has(> div > h2 .contextLink):not(section.section:has(> div > h2 .contextLink) + *) {
+	border-top: 3px solid rgb(156 163 175);
+	margin-top: 2.5rem;
+	padding-top: 1.5rem;
+}
+
+section.section:has(> div > h2 .contextLink):not(section.section:has(> div > h2 .contextLink) + *)::before {
+	content: 'Categories';
+	display: block;
+	font-size: 1.5rem;
+	font-weight: 700;
+	line-height: 2rem;
+	margin-bottom: 1.25rem;
+}
+
+.dark section.section:has(> div > h2 .contextLink):not(section.section:has(> div > h2 .contextLink) + *) {
+	border-color: rgb(107 114 128);
+}
+
 @media (width < 1024px) {
 	.ddoc:has(#categoryPanel) {
 		flex-direction: column;
