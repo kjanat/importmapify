@@ -150,13 +150,16 @@ section.section:has(> div > h2 .contextLink):not(section.section:has(> div > h2 
 		flex-wrap: nowrap;
 		align-items: center;
 		overflow: hidden;
+		gap: 0.25rem;
 	}
 
-	#topnav .breadcrumbs li {
+	#topnav .breadcrumbs > * {
+		flex: 0 0 auto;
 		white-space: nowrap;
 	}
 
-	#topnav .breadcrumbs li:last-child {
+	#topnav .breadcrumbs > :last-child {
+		flex: 0 1 auto;
 		overflow: hidden;
 		text-overflow: ellipsis;
 	}
