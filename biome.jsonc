@@ -43,7 +43,7 @@
 	},
 	"javascript": {
 		"formatter": { "quoteStyle": "single" },
-		"globals": ["Bun", "Deno"]
+		"globals": ["Bun", "Deno", "HTMLRewriter"]
 	},
 	"json": { "formatter": { "enabled": false } },
 	"assist": {

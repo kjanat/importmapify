@@ -5,12 +5,13 @@ import path from 'node:path';
 import process from 'node:process';
 
 const docsDir = process.argv[2] ?? '.denodocs';
+const HASH_LENGTH = 8;
 
 const renames = new Map();
 for (const entry of readdirSync(docsDir, { withFileTypes: true })) {
 	if (entry.isFile() && entry.name.endsWith('.css')) {
 		const source = path.join(docsDir, entry.name);
-		const hash = createHash('sha256').update(readFileSync(source)).digest('hex').slice(0, 8);
+		const hash = createHash('sha256').update(readFileSync(source)).digest('hex').slice(0, HASH_LENGTH);
 		const hashed = entry.name.replace(/\.css$/, `.${hash}.css`);
 		renameSync(source, path.join(docsDir, hashed));
 		renames.set(entry.name, hashed);

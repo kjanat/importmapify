@@ -36,6 +36,10 @@ section.section:has(> div > h2 .contextLink):not(section.section:has(> div > h2 
 	border-color: rgb(107 114 128);
 }
 
+.catNav summary {
+	display: none;
+}
+
 @media (width < 1024px) {
 	.ddoc:has(#categoryPanel) {
 		flex-direction: column;
@@ -51,25 +55,77 @@ section.section:has(> div > h2 .contextLink):not(section.section:has(> div > h2 
 		position: static;
 		width: 100%;
 		height: auto;
-		padding: 0.5rem 1rem;
+		padding: 0.75rem 1rem 0;
 		box-sizing: border-box;
 	}
 
-	#categoryPanel > ul {
-		display: flex;
-		flex-wrap: nowrap;
+	.catNav summary {
+		display: inline-flex;
 		align-items: center;
-		gap: 1rem;
-		overflow-x: auto;
+		gap: 0.4rem;
+		padding: 0.35rem 0.9rem;
+		border: 1px solid rgb(209 213 219);
+		border-radius: 9999px;
+		background: rgb(249 250 251);
+		font-size: 0.875rem;
+		font-weight: 500;
+		cursor: pointer;
+		user-select: none;
+		list-style: none;
 	}
 
-	#categoryPanel > ul > li {
+	.catNav summary::-webkit-details-marker {
+		display: none;
+	}
+
+	.catNav summary::after {
+		content: "\25BE";
+		transition: transform 0.15s ease;
+	}
+
+	.catNav[open] summary::after {
+		transform: rotate(180deg);
+	}
+
+	.dark .catNav summary {
+		border-color: rgb(55 65 81);
+		background: rgb(31 41 55);
+	}
+
+	.catNav > ul {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+		padding: 0.75rem 0 0.25rem;
+	}
+
+	.catNav > ul > li {
 		white-space: nowrap;
-		flex-shrink: 0;
 	}
 
 	#categoryPanel ul > :not([hidden]) ~ :not([hidden]) {
 		margin-top: 0;
+	}
+
+	.catNav > ul a {
+		display: inline-block;
+		padding: 0.3rem 0.8rem;
+		border: 1px solid rgb(209 213 219);
+		border-radius: 9999px;
+		font-size: 0.875rem;
+	}
+
+	.catNav > ul li.active a {
+		background: rgb(229 231 235);
+		font-weight: 600;
+	}
+
+	.dark .catNav > ul a {
+		border-color: rgb(55 65 81);
+	}
+
+	.dark .catNav > ul li.active a {
+		background: rgb(55 65 81);
 	}
 
 	#topnav {
@@ -77,12 +133,31 @@ section.section:has(> div > h2 .contextLink):not(section.section:has(> div > h2 
 	}
 
 	#topnav .h-full {
-		flex-wrap: wrap;
-		row-gap: 0.5rem;
+		flex-wrap: nowrap;
+		gap: 0.5rem;
+		align-items: center;
 	}
 
 	#topnav .h-full > div:first-child {
-		flex: 1 1 100%;
+		flex: 0 1 auto;
+		min-width: 0;
+		overflow: hidden;
+	}
+
+	#topnav .breadcrumbs {
+		display: flex;
+		flex-wrap: nowrap;
+		align-items: center;
+		overflow: hidden;
+	}
+
+	#topnav .breadcrumbs li {
+		white-space: nowrap;
+	}
+
+	#topnav .breadcrumbs li:last-child {
+		overflow: hidden;
+		text-overflow: ellipsis;
 	}
 
 	#topnav .h-full > div:not(:first-child) {
@@ -91,7 +166,7 @@ section.section:has(> div > h2 .contextLink):not(section.section:has(> div > h2 
 
 	#searchbar {
 		flex: 1 1 auto;
-		min-width: 0;
+		min-width: 4rem;
 	}
 
 	.symbolTitle .break-all {
