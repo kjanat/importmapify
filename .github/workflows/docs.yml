@@ -14,6 +14,7 @@ jobs:
       uses: denoland/setup-deno@v2,
       uses: kjanat/runner@master,
       run: runner install deno:ci:docs,
+      { uses: kjanat/404@master, with: { directory: .denodocs } },
       { uses: actions/upload-pages-artifact@v5, with: { path: .denodocs } },
     ]
   deploy:
