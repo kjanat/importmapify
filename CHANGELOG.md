@@ -4,6 +4,27 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.1] - 2026-07-21
+
+### Added
+
+- A 404 page on the documentation site.
+
+### Changed
+
+- The documentation site works on narrow screens. The mobile header is a single bar, the nav collapses into a
+  disclosure, breadcrumbs stay on one line with a trailing ellipsis, and code blocks no longer overflow the page.
+- Doc post-processing runs as one HTMLRewriter pass in `scripts/transform-docs.ts`, replacing
+  `scripts/link-source-buttons.mjs` and `scripts/inject-favicon.mjs`. `deno task doc:html` now calls
+  `scripts/build-docs.sh` instead of an inline shell one-liner.
+- Stylesheet filenames on the docs site are content-hashed.
+- Bumped `dreamcli` to 3.0.1, `ansispeck` to 0.4.1, and `tsdown` to 0.22.12.
+
+### Fixed
+
+- Percent-encoded links in the generated docs.
+- `{@link}` tags on cross-file symbol references in `src/types.ts`, which rendered as plain text.
+
 ## [1.6.0] - 2026-07-19
 
 ### Added
@@ -133,6 +154,7 @@ All notable changes to this project are documented here. The format follows
   deterministically-sorted entries a Deno import map needs, so `deno doc`, `deno check`, and the Deno LSP can resolve
   Node-style subpath imports. Ships as both a library and a CLI.
 
+[1.6.1]: https://github.com/kjanat/importmapify/compare/v1.6.0...v1.6.1
 [1.6.0]: https://github.com/kjanat/importmapify/compare/v1.5.0...v1.6.0
 [1.5.0]: https://github.com/kjanat/importmapify/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/kjanat/importmapify/compare/v1.3.1...v1.4.0
