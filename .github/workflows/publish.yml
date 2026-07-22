@@ -76,14 +76,26 @@ jobs:
     timeout-minutes: 2
     permissions: { contents: write }
     steps:
+      - { uses: actions/checkout@v7, with: { persist-credentials: false } }
       - uses: actions/github-script@v9
         with:
           script: |
+            const { readFileSync } = require('node:fs')
             const tag = context.ref.replace('refs/tags/', '')
             const { owner, repo } = context.repo
+
+            const lines = readFileSync('CHANGELOG.md', 'utf8').split('\n')
+            const start = lines.findIndex((line) => line.startsWith(`## [${tag.slice(1)}]`))
+            const rest = start === -1 ? [] : lines.slice(start + 1)
+            const end = rest.findIndex((line) => line.startsWith('## ['))
+            const body = (end === -1 ? rest : rest.slice(0, end)).join('\n').trim()
+            if (body === '') core.warning(`CHANGELOG.md has no section for ${tag}`)
+
             await github.rest.repos.createRelease({
               owner, repo,
               tag_name: tag,
+              body,
+              draft: true,
               generate_release_notes: true,
               prerelease: tag.includes('-'),
             })
