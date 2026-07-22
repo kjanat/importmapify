@@ -28,8 +28,8 @@
 			"description": "Publish package to jsr"
 		},
 		"importmapify": {
-			"description": "generate importmap for deno (requires bun)",
-			"command": "bun scripts/generate-importmap.ts"
+			"description": "generate importmap for deno from importmapify.config.ts (requires bun)",
+			"command": "bun run importmap"
 		},
 		"doc:html": {
 			"command": "./scripts/build-docs.sh",

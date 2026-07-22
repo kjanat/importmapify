@@ -1,14 +1,4 @@
-#!/usr/bin/env bun
-
-/**
- * biome-ignore-all lint/complexity/noRedundantDefaultExport: explanation
- * biome-ignore-all lint/performance/noBarrelFile: explanation
- */
-
-import { env, stderr } from 'bun';
-import { defineConfig, writeImportMap } from '#src/map';
-import type { WriteImportMapOptions } from '#src/types';
-import lockfile from '../bun.lock' with { type: 'jsonc' };
+import lockfile from './bun.lock' with { type: 'jsonc' };
 
 function lockSpec(name: string): string {
 	const entry: Bun.BunLockFilePackageArray | undefined = lockfile.packages[name];
@@ -16,9 +6,7 @@ function lockSpec(name: string): string {
 	return entry[0];
 }
 
-const options: WriteImportMapOptions & { readonly out: string } = defineConfig({
-	out: 'import_map.json',
-	root: new URL('..', import.meta.url).pathname,
+const config: import('importmapify').Config = {
 	additionalImports: {
 		'@types/bun': `npm:${lockSpec('@types/bun')}`,
 		'bun:test': `${`npm:${lockSpec('bun-types')}`}/test.d.ts`,
@@ -35,8 +23,6 @@ const options: WriteImportMapOptions & { readonly out: string } = defineConfig({
 			'dreamcli/testkit': `jsr:${lockSpec('dreamcli')}/testkit`,
 		},
 	},
-});
+};
 
-if (import.meta.main && !env['NOPE']) stderr.write(`Wrote ${writeImportMap(options)}\n`);
-
-export default options;
+export default config;

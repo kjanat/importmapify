@@ -243,43 +243,41 @@ writeImportMap({
 
 ### Project-local generator
 
-A checked-in wrapper keeps project-specific dependency and scope mappings in code:
+This repository generates its own `import_map.json` from [`importmapify.config.ts`](importmapify.config.ts), which
+resolves every version out of `bun.lock` so the map cannot drift from the lockfile:
 
 ```ts
-#!/usr/bin/env -S deno run -A --no-config
+import lockfile from './bun.lock' with { type: 'jsonc' };
 
-import { writeImportMap } from 'importmapify';
+function lockSpec(name: string): string {
+  const entry: Bun.BunLockFilePackageArray | undefined = lockfile.packages[name];
+  if (entry === undefined) throw new Error(`bun.lock is missing package "${name}"`);
+  return entry[0];
+}
 
-const output = writeImportMap({
-  root: new URL('..', import.meta.url).pathname,
-  out: 'import_map.json',
+const config: import('importmapify').Config = {
   packages: {
-    dreamcli: 'jsr:@kjanat/dreamcli@^3',
+    dreamcli: `jsr:${lockSpec('dreamcli')}`,
   },
   scopes: {
     './tests/': {
-      'dreamcli/testkit': 'jsr:@kjanat/dreamcli@^3/testkit',
+      'dreamcli/testkit': `jsr:${lockSpec('dreamcli')}/testkit`,
     },
   },
-});
+};
 
-console.log(`Wrote ${output}`);
+export default config;
 ```
 
-Execute the wrapper directly so its `--no-config` shebang can bootstrap a missing map:
+`root` and `out` are omitted, so the map is written next to the config as `import_map.json`. The `prepare` script runs
+the published CLI with `bunx importmapify@latest`, so `bun install` bootstraps a missing map:
 
 ```sh
-scripts/generate-importmap.ts
+bun run importmap   # or: deno task importmapify
 ```
 
-The equivalent explicit command is:
-
-```sh
-deno run -A --no-config scripts/generate-importmap.ts
-```
-
-Do not omit `--no-config`. If `deno.json` references a map that does not exist yet, `deno run` otherwise fails while
-loading configuration, before the generator starts.
+A config that reads the lockfile needs a runtime that handles both TypeScript and the import attribute, so this one is
+Bun-only. Drop `lockSpec` for plain version literals to make it portable.
 
 ## What it generates
 
