@@ -33,6 +33,9 @@
 				"useQwikClasslist": "off",
 				"useQwikValidLexicalScope": "off"
 			},
+			"security": {
+				"noSecrets": "off" // too many false positives
+			},
 			"style": {
 				"noDefaultExport": "off",
 				"noNestedTernary": "off",

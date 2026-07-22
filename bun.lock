@@ -5,7 +5,6 @@
     "": {
       "name": "importmapify",
       "dependencies": {
-        "ansispeck": "^0.4.1",
         "dreamcli": "npm:@kjanat/dreamcli@^3.0.1",
       },
       "devDependencies": {
@@ -14,6 +13,7 @@
         "@types/deno": "^2.7.0",
         "@types/node": "^26.1.1",
         "@typescript/native": "npm:typescript@^7",
+        "ansispeck": "^0.4.1",
         "biome": "npm:@biomejs/biome@^2.5.4",
         "dprint": "^0.55.2",
         "publint": "^0.3.21",

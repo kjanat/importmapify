@@ -4,6 +4,41 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0] - 2026-07-22
+
+### Added
+
+- A `--import` example in `--help` and the README.
+- `--out`, `--manifest`, and `--config` reject an empty value. `--out ''` used to reach the writer and fail with
+  `Unexpected error: EISDIR`.
+
+### Changed
+
+- `--import` and `--package` are dreamcli `keyValue` flags, `--scope` and `--filter` parse into typed values at the flag
+  boundary, and `--indent` resolves to `string | number` there. Invalid values are rejected during parsing rather than
+  during option resolution.
+- `--check` and `--stdout` are checked for conflict in a `derive()` step instead of at the top of the action.
+- Help examples resolve the invoked program name at render time, so they stay correct under `npx`, a symlink, or a
+  rename.
+- `ansispeck` moved to `devDependencies`. Nothing under `src/` imports it since dreamcli took over example highlighting
+  and the hyperlink gate.
+
+### Removed
+
+- The example-highlighting workaround for [dreamcli#65][dreamcli#65] and the `--json` escape-code guard it needed.
+  dreamcli 3 highlights examples itself and gates the color on `NO_COLOR` and TTY, which the local version did not.
+- The `hyperlinks` override for [dreamcli#63][dreamcli#63]. The header gate honors `NO_HYPERLINKS` and `--no-hyperlinks`
+  upstream.
+
+### Fixed
+
+- `--quiet` / `-q` now suppresses the `Wrote <path>` and `is up to date` confirmations. dreamcli strips both tokens from
+  argv at the root before dispatch, so the command-level `quiet` flag was never set, and the confirmations went through
+  `warn()`, which ignores verbosity. They use `status()` now and the duplicate flag declaration is gone.
+
+[dreamcli#63]: https://github.com/kjanat/dreamcli/issues/63
+[dreamcli#65]: https://github.com/kjanat/dreamcli/issues/65
+
 ## [1.6.1] - 2026-07-21
 
 ### Added
@@ -154,6 +189,7 @@ All notable changes to this project are documented here. The format follows
   deterministically-sorted entries a Deno import map needs, so `deno doc`, `deno check`, and the Deno LSP can resolve
   Node-style subpath imports. Ships as both a library and a CLI.
 
+[1.7.0]: https://github.com/kjanat/importmapify/compare/v1.6.1...v1.7.0
 [1.6.1]: https://github.com/kjanat/importmapify/compare/v1.6.0...v1.6.1
 [1.6.0]: https://github.com/kjanat/importmapify/compare/v1.5.0...v1.6.0
 [1.5.0]: https://github.com/kjanat/importmapify/compare/v1.4.0...v1.5.0

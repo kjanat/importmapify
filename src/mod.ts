@@ -36,7 +36,6 @@
  * @module importmapify
  */
 
-import { detectHyperlinkSupport } from 'ansispeck';
 import { cli as dreamcli } from 'dreamcli';
 import { generateCommand } from '#src/cli';
 
@@ -46,12 +45,9 @@ const cli = dreamcli('importmapify')
 	.default(generateCommand)
 	.completions({ as: 'flag' });
 
-// dreamcli's help hyperlink gate ignores NO_HYPERLINKS (kjanat/dreamcli#63); underline the
-// header so name/version stay underlined once the link (and its underline) is gone.
 if (import.meta.main) {
 	cli.run({
 		help: {
-			hyperlinks: detectHyperlinkSupport(),
 			theme: (c) => ({
 				headerName: (input) => c.bold(c.underline(input)),
 				headerVersion: (input) => c.dim(c.underline(input)),

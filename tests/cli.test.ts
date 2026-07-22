@@ -26,7 +26,7 @@ function fixture(imports: Readonly<Record<string, unknown>>, files: readonly str
 
 describe('generateCommand', () => {
 	it('shows generation, scope, and freshness examples in help', async () => {
-		const result = await runCommand(generateCommand, ['--help']);
+		const result = await runCommand(generateCommand, ['--help'], { help: { binName: 'importmapify' } });
 		const help = strip(result.stdout.join('\n'));
 		expect(help).toContain('Examples:');
 		expect(help).toContain('importmapify --stdout');
@@ -43,6 +43,24 @@ describe('generateCommand', () => {
 		expect(JSON.parse(fs.readFileSync(path.join(root, 'import_map.json'), 'utf8'))).toEqual({
 			imports: { '#config': './src/config.ts' },
 		});
+	});
+
+	it('suppresses the confirmation under --quiet', async () => {
+		const root = fixture({ '#config': './src/config.ts' }, ['src/config.ts']);
+		const result = await runCommand(generateCommand, ['--root', root, '--quiet']);
+
+		expect(result.exitCode).toBe(0);
+		expect(result.stderr).toEqual([]);
+		expect(fs.existsSync(path.join(root, 'import_map.json'))).toBe(true);
+	});
+
+	it('keeps the stale --check failure under --quiet', async () => {
+		const root = fixture({ '#config': './src/config.ts' }, ['src/config.ts']);
+		fs.writeFileSync(path.join(root, 'import_map.json'), 'stale');
+		const result = await runCommand(generateCommand, ['--root', root, '--check', '-q']);
+
+		expect(result.exitCode).toBe(1);
+		expect(result.stderr.some((line) => line.includes('is stale'))).toBe(true);
 	});
 
 	it('prints the map to stdout instead of writing it', async () => {
@@ -153,6 +171,27 @@ describe('generateCommand', () => {
 		const root = fixture({});
 		const result = await runCommand(generateCommand, ['--root', root, '--stdout', '--import', 'nokeyvalue']);
 		expect(result.exitCode).not.toBe(0);
+	});
+
+	it('rejects an empty --out instead of writing to the root directory', async () => {
+		const root = fixture({});
+		const result = await runCommand(generateCommand, ['--root', root, '--out', '']);
+		expect(result.exitCode).toBe(2);
+	});
+
+	it('keeps the last value for a repeated --import key', async () => {
+		const root = fixture({});
+		/* biome-ignore format: kv */
+		const result = await runCommand(generateCommand, [
+			'--root',   root,
+			'--stdout',
+			'--import', 'virtual=https://example.com/first.ts',
+			'--import', 'virtual=https://example.com/second.ts',
+		]);
+
+		expect(JSON.parse(result.stdout.join(''))).toEqual({
+			imports: { virtual: 'https://example.com/second.ts' },
+		});
 	});
 
 	it('rejects a --scope value with no prefix separator', async () => {

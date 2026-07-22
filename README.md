@@ -57,6 +57,14 @@ npx importmapify \
   --scope './tests/::dreamcli/testkit=jsr:@kjanat/dreamcli@^3/testkit'
 ```
 
+Merge extra entries in after manifest expansion:
+
+```sh
+npx importmapify \
+  --import '#pkg=./package.json' \
+  --import 'std/fs=jsr:@std/fs@^1'
+```
+
 Run `npx importmapify --help` for the full reference, or `npx importmapify --completions bash` for shell completions.
 
 ### Config file

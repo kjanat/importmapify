@@ -1,62 +1,50 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
-import { argv, cwd } from 'node:process';
-import { bold, cyan } from 'ansispeck';
+import { cwd } from 'node:process';
 import type { AnyCommandBuilder } from 'dreamcli';
 import { CLIError, command, flag } from 'dreamcli';
 import { assign, configToOptions, discoverConfig, loadConfig, mergeScopes } from '#src/config';
 import { DEFAULT_OUT, createImportMap, formatImportMap, resolveOut, toPath } from '#src/map';
 import type { Config, HookContext, PathOrUrl, TargetFilter, WriteImportMapOptions } from '#src/types';
 
-const EXAMPLE_TOKEN = /(?:'[^']*'|"[^"]*"|\S)+/g;
 const SPACE_COUNT = /^\d+$/;
-const FLAG_ARGS = argv.includes('--') ? argv.slice(0, argv.indexOf('--')) : argv;
-const JSON_MODE = FLAG_ARGS.includes('--json');
 
-// dreamcli renders example commands unstyled (kjanat/dreamcli#65); styling is baked in here, so skip
-// it under --json to keep the serialized schema free of escape codes.
-function highlightExample(example: string): string {
-	if (JSON_MODE) return example;
-	const tokens = example.match(EXAMPLE_TOKEN);
-	if (tokens === null) return example;
-	return tokens
-		.map((token, index) => (index === 0 ? bold(token) : token.startsWith('-') ? cyan(token) : token))
-		.join(' ');
+type Scope = readonly [prefix: string, key: string, value: string];
+
+function asString(raw: unknown): string {
+	if (typeof raw !== 'string') throw new Error(`expected a string, got ${typeof raw}`);
+	return raw;
 }
 
-function parseKeyValue(raw: string, flagName: string, code: string): readonly [string, string] {
-	const eq = raw.indexOf('=');
-	if (eq === -1) {
-		throw new CLIError(`--${flagName} expects key=value, got "${raw}"`, { code, exitCode: 2 });
+function parseScope(raw: unknown): Scope {
+	const value = asString(raw);
+	const separator = value.indexOf('::');
+	const eq = value.indexOf('=', separator + 2);
+	if (separator <= 0 || eq <= separator + 2 || eq === value.length - 1) {
+		throw new Error(`"${value}" is not prefix::key=value`);
 	}
-	return [raw.slice(0, eq), raw.slice(eq + 1)];
+	return [value.slice(0, separator), value.slice(separator + 2, eq), value.slice(eq + 1)];
 }
 
-function parseScope(raw: string): readonly [string, string, string] {
-	const separator = raw.indexOf('::');
-	const eq = raw.indexOf('=', separator + 2);
-	if (separator <= 0 || eq <= separator + 2 || eq === raw.length - 1) {
-		throw new CLIError(`--scope expects prefix::key=value, got "${raw}"`, {
-			code: 'invalid-scope-flag',
-			exitCode: 2,
-		});
+function parseIndent(raw: unknown): string | number {
+	const value = asString(raw);
+	if (value === 'tab') return '\t';
+	if (SPACE_COUNT.test(value)) return Number(value);
+	throw new Error(`"${value}" is neither a number of spaces nor "tab"`);
+}
+
+function parseFilter(raw: unknown): TargetFilter {
+	const value = asString(raw);
+	try {
+		return new RegExp(value);
+	} catch (cause) {
+		throw new Error(`"${value}" is not a valid regular expression`, { cause });
 	}
-	return [raw.slice(0, separator), raw.slice(separator + 2, eq), raw.slice(eq + 1)];
 }
 
-function parseEntries(raws: readonly string[], flagName: string, code: string): Record<string, string> {
-	const entries: Record<string, string> = {};
-	for (const raw of raws) {
-		const [key, value] = parseKeyValue(raw, flagName, code);
-		entries[key] = value;
-	}
-	return entries;
-}
-
-function buildScopes(raws: readonly string[]): Record<string, Record<string, string>> {
+function buildScopes(entries: readonly Scope[]): Record<string, Record<string, string>> {
 	const scopes: Record<string, Record<string, string>> = {};
-	for (const raw of raws) {
-		const [scope, key, value] = parseScope(raw);
+	for (const [scope, key, value] of entries) {
 		const mappings = scopes[scope];
 		if (mappings === undefined) scopes[scope] = { [key]: value };
 		else mappings[key] = value;
@@ -68,13 +56,13 @@ interface GenerateFlags {
 	readonly root: string;
 	readonly manifest: string;
 	readonly out: string;
-	readonly indent?: string | undefined;
+	readonly indent?: string | number | undefined;
 	readonly condition?: readonly string[] | undefined;
-	readonly import?: readonly string[] | undefined;
-	readonly package?: readonly string[] | undefined;
+	readonly import?: Readonly<Record<string, string>> | undefined;
+	readonly package?: Readonly<Record<string, string>> | undefined;
 	readonly ext?: readonly string[] | undefined;
-	readonly filter?: readonly string[] | undefined;
-	readonly scope?: readonly string[] | undefined;
+	readonly filter?: readonly TargetFilter[] | undefined;
+	readonly scope?: readonly Scope[] | undefined;
 	readonly config?: string | undefined;
 	readonly 'no-config'?: boolean | undefined;
 }
@@ -118,29 +106,6 @@ function preferArray<T>(
 	return flagValue !== undefined && flagValue.length > 0 ? flagValue : configValue;
 }
 
-function parseIndent(raw: string): string | number {
-	if (raw === 'tab') return '\t';
-	if (SPACE_COUNT.test(raw)) return Number(raw);
-	throw new CLIError(`--indent expects a number of spaces or "tab", got "${raw}"`, {
-		code: 'invalid-indent-flag',
-		exitCode: 2,
-	});
-}
-
-function compileFilters(raws: readonly string[]): readonly RegExp[] {
-	return raws.map((raw) => {
-		try {
-			return new RegExp(raw);
-		} catch (cause) {
-			throw new CLIError(`--filter expects a valid regular expression, got "${raw}"`, {
-				code: 'invalid-filter-flag',
-				exitCode: 2,
-				cause,
-			});
-		}
-	});
-}
-
 /** Resolved import map options with the config hooks the CLI runs around generation. */
 type ResolvedGenerate = WriteImportMapOptions & { readonly hooks?: Config['hooks'] };
 
@@ -154,24 +119,17 @@ async function resolveGenerateOptions(flags: GenerateFlags): Promise<ResolvedGen
 	const base = await loadConfigOptions(flags.root, flags.config, flags['no-config'] ?? false);
 	const conditions = preferArray(flags.condition, base.conditions);
 	const extensions = preferArray(flags.ext, base.extensions);
-	const filter = preferArray<TargetFilter>(
-		flags.filter === undefined ? undefined : compileFilters(flags.filter),
-		base.filter,
-	);
-	const indent = flags.indent === undefined ? base.indent : parseIndent(flags.indent);
+	const filter = preferArray<TargetFilter>(flags.filter, base.filter);
 	const options: MutableResolved = {
 		root: preferExplicit(flags.root !== cwd(), flags.root, base.root),
 		manifest: preferExplicit(flags.manifest !== 'package.json', flags.manifest, base.manifest),
 		out: preferExplicit(flags.out !== DEFAULT_OUT, flags.out, base.out),
-		packages: { ...base.packages, ...parseEntries(flags.package ?? [], 'package', 'invalid-package-flag') },
-		additionalImports: {
-			...base.additionalImports,
-			...parseEntries(flags.import ?? [], 'import', 'invalid-import-flag'),
-		},
+		packages: { ...base.packages, ...flags.package },
+		additionalImports: { ...base.additionalImports, ...flags.import },
 		scopes: mergeScopes(base.scopes, buildScopes(flags.scope ?? [])),
 	};
 	assign(options, 'relativeTo', base.relativeTo);
-	assign(options, 'indent', indent);
+	assign(options, 'indent', flags.indent ?? base.indent);
 	assign(options, 'conditions', conditions);
 	assign(options, 'extensions', extensions);
 	assign(options, 'filter', filter);
@@ -190,24 +148,28 @@ export const generateCommand: AnyCommandBuilder = command('generate')
 			.describe('Project root containing the manifest.')
 			.alias('r'),
 	)
-	.flag('manifest', flag.string().default('package.json').describe('Manifest path, relative to root.').alias('m'))
+	.flag(
+		'manifest',
+		flag
+			.string({ nonEmpty: true })
+			.default('package.json')
+			.describe('Manifest path, relative to root.')
+			.alias('m'),
+	)
 	.flag(
 		'out',
 		flag
-			.string()
+			.string({ nonEmpty: true })
 			.default(DEFAULT_OUT)
 			.describe('Output path resolved against root; relative, absolute, or file:// URL.')
 			.alias('o'),
 	)
-	.flag('indent', flag.string().describe('Indentation as a number of spaces or the word "tab".'))
-	.flag(
-		'import',
-		flag.array(flag.string()).describe('Additional import entry as key=value. Repeatable.').alias('i'),
-	)
+	.flag('indent', flag.custom(parseIndent).describe('Indentation as a number of spaces or the word "tab".'))
+	.flag('import', flag.keyValue().describe('Additional import entry as key=value. Repeatable.').alias('i'))
 	.flag(
 		'package',
 		flag
-			.array(flag.string())
+			.keyValue()
 			.describe('Package as name=target, expanded to a conformant bare and trailing-slash pair. Repeatable.')
 			.alias('p'),
 	)
@@ -221,11 +183,14 @@ export const generateCommand: AnyCommandBuilder = command('generate')
 	.flag(
 		'filter',
 		flag
-			.array(flag.string())
+			.array(flag.custom(parseFilter))
 			.describe('Regular expression a pattern target path must match. Repeatable.')
 			.alias('f'),
 	)
-	.flag('scope', flag.array(flag.string()).describe('Scoped import as prefix::key=value. Repeatable.').alias('s'))
+	.flag(
+		'scope',
+		flag.array(flag.custom(parseScope)).describe('Scoped import as prefix::key=value. Repeatable.').alias('s'),
+	)
 	.flag(
 		'condition',
 		flag
@@ -233,29 +198,32 @@ export const generateCommand: AnyCommandBuilder = command('generate')
 			.describe('Condition to try when a target is a conditional object. Repeatable.')
 			.alias('c'),
 	)
-	.flag('config', flag.string().describe('Config file path; skips discovery.').alias('C'))
+	.flag('config', flag.string({ nonEmpty: true }).describe('Config file path; skips discovery.').alias('C'))
 	.flag('no-config', flag.boolean().describe('Skip config file discovery.'))
 	.flag('check', flag.boolean().describe('Exit 1 if the output file is stale instead of writing it.'))
 	.flag('stdout', flag.boolean().describe('Print the import map to stdout instead of writing it.'))
-	.flag('quiet', flag.boolean().describe('Suppress the confirmation message on stderr.').alias('q'))
-	.example(highlightExample('importmapify --stdout'), 'Print the generated import map')
+	.example(({ name }) => `${name} --stdout`, 'Print the generated import map')
 	.example(
-		highlightExample(
-			`importmapify --package 'dreamcli=jsr:@kjanat/dreamcli@^3' --scope './tests/::dreamcli/testkit=jsr:@kjanat/dreamcli@^3/testkit'`,
-		),
+		({ name }) =>
+			`${name} --package 'dreamcli=jsr:@kjanat/dreamcli@^3' --scope './tests/::dreamcli/testkit=jsr:@kjanat/dreamcli@^3/testkit'`,
 		'Add global and test-scoped dependencies',
 	)
-	.example(highlightExample('importmapify --check'), 'Fail when the generated file is stale')
-	.action(async ({ flags, out }) => {
-		const { log, warn, error, setExitCode } = out;
-		const { check, stdout, quiet } = flags;
-
-		if (check && stdout) {
+	.example(
+		({ name }) => `${name} --import '#pkg=./package.json' --import 'std/fs=jsr:@std/fs@^1'`,
+		'Merge extra entries in after manifest expansion',
+	)
+	.example(({ name }) => `${name} --check`, 'Fail when the generated file is stale')
+	.derive(({ flags }) => {
+		if (flags.check && flags.stdout) {
 			throw new CLIError('--check and --stdout are mutually exclusive', {
 				code: 'conflicting-flags',
 				exitCode: 2,
 			});
 		}
+	})
+	.action(async ({ flags, out }) => {
+		const { log, status, error, setExitCode } = out;
+		const { check, stdout } = flags;
 
 		const options = await resolveGenerateOptions(flags);
 		const outPath = resolveOut(options.root, options.out ?? DEFAULT_OUT);
@@ -271,16 +239,16 @@ export const generateCommand: AnyCommandBuilder = command('generate')
 			log(text);
 		} else if (check) {
 			const actual = existsSync(outPath) ? readFileSync(outPath, 'utf8') : undefined;
-			if (actual !== text) {
+			if (actual === text) {
+				status(`${outPath} is up to date`);
+			} else {
 				error(`${outPath} is stale`);
 				setExitCode(1);
-			} else if (!quiet) {
-				warn(`${outPath} is up to date`);
 			}
 		} else {
 			mkdirSync(dirname(outPath), { recursive: true });
 			writeFileSync(outPath, text);
-			if (!quiet) warn(`Wrote ${outPath}`);
+			status(`Wrote ${outPath}`);
 		}
 
 		await options.hooks?.['generate:done']?.({ ...hookContext, map });

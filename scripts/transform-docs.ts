@@ -124,7 +124,7 @@ function hashCssHref(href: string): string {
 	for (const [plain, hashed] of cssRenames) {
 		if (href === plain) return hashed;
 		if (href.endsWith(plain)) {
-			const boundary = href[href.length - plain.length - 1];
+			const boundary = href.at(-(plain.length + 1));
 			if (boundary === '/' || boundary === ';') return href.slice(0, href.length - plain.length) + hashed;
 		}
 	}

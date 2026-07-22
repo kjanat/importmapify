@@ -1,8 +1,9 @@
 {
 	"name": "importmapify",
-	"version": "1.6.1",
+	"version": "1.7.0",
 	"description": "Expand package.json subpath-pattern imports into explicit Deno import map entries.",
 	"keywords": [
+		"importmapify",
 		"deno",
 		"import-map",
 		"importmap",
@@ -65,7 +66,6 @@
 		"volta:bump": "volta pin node@latest npm@11; node --version>.node-version; run bd"
 	},
 	"dependencies": {
-		"ansispeck": "^0.4.1",
 		"dreamcli": "npm:@kjanat/dreamcli@^3.0.1"
 	},
 	"devDependencies": {
@@ -74,6 +74,7 @@
 		"@types/deno": "^2.7.0",
 		"@types/node": "^26.1.1",
 		"@typescript/native": "npm:typescript@^7",
+		"ansispeck": "^0.4.1",
 		"biome": "npm:@biomejs/biome@^2.5.4",
 		"dprint": "^0.55.2",
 		"publint": "^0.3.21",
