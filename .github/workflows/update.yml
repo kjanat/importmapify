@@ -22,21 +22,43 @@ jobs:
       - uses: kjanat/runner@master
 
       - name: Update dependencies
-        run: bun update --save-text-lockfile
+        run: |
+          $out = bun update --save-text-lockfile 2>&1
+          $out | Write-Host
+          $rows = $out | Select-String -Pattern '^\^\s+(\S+)\s+(\S+)\s+->\s+(\S+)\s*$' | ForEach-Object {
+            $g = $_.Matches[0].Groups
+            [pscustomobject]@{ dep = $g[1].Value; from = $g[2].Value; to = $g[3].Value }
+          }
+          if (-not $rows) { exit 0 }
+          $cols = 'dep', 'from', 'to'
+          $w = @{}
+          foreach ($c in $cols) { $w[$c] = (@($c) + @($rows.$c) | Measure-Object -Maximum -Property Length).Maximum }
+          $line = { param($cells) (($cols | ForEach-Object { $cells[$_].PadRight($w[$_]) }) -join ' | ').TrimEnd() }
+          $head = & $line @{ dep = 'dep'; from = 'from'; to = 'to' }
+          $data = $rows | ForEach-Object { $r = $_; & $line @{ dep = $r.dep; from = $r.from; to = $r.to } }
+          $plain = & $line @{ dep = '-' * $w.dep; from = '-' * $w.from; to = '-' * $w.to }
+          $right = & $line @{ dep = '-' * $w.dep; from = '-' * ($w.from - 1) + ':'; to = '-' * ($w.to - 1) + ':' }
+          "TABLE<<EOF_TABLE`n{0}`nEOF_TABLE" -f ((@($head, $plain) + $data) -join "`n") >> $env:GITHUB_ENV
+          "TABLE_MD<<EOF_MD`n{0}`nEOF_MD" -f ((@($head, $right) + $data) -join "`n") >> $env:GITHUB_ENV
 
-      - name: Regenerate anything the manifest produces
-        run: runner install -q
+      - run: runner install -q
 
       - id: diff
         name: Collect changes
         run: |
           $changed = git status --porcelain
-          if (-not $changed) { "changed=false" >> $env:GITHUB_OUTPUT; "::notice title=No updates::Every dependency is already current"; exit 0 }
+          if (-not $changed) { "changed=false" >> $env:GITHUB_OUTPUT; "## No updates`n`nEvery dependency is already current." >> $env:GITHUB_STEP_SUMMARY; exit 0 }
           "changed=true" >> $env:GITHUB_OUTPUT
-          $body = "### Updated`n`n``````diff`n" + (git diff -- package.json import_map.json | Out-String) + "`n``````"
-          "body<<PRBODY`n$body`nPRBODY" >> $env:GITHUB_OUTPUT
+          $blocks = foreach ($f in 'package.json', 'import_map.json') {
+            $d = (git diff -- $f | Out-String).TrimEnd()
+            if (-not $d) { continue }
+            $n = (git diff --numstat -- $f) -split '\s+'
+            "<details><summary><code>{0}</code> diff, +{1} -{2}</summary>`n`n~~~diff`n{3}`n~~~`n`n</details>" -f $f, $n[0], $n[1], $d
+          }
+          $body = "<!-- deps:begin -->`n`n{0}`n`n{1}`n`n<!-- deps:end -->" -f $env:TABLE_MD, ($blocks -join "`n`n")
+          "PR_BODY<<EOF_BODY`n{0}`nEOF_BODY" -f $body >> $env:GITHUB_ENV
 
-      - name: Verify before proposing
+      - name: Verify
         if: steps.diff.outputs.changed == 'true'
         run: runner install -qs build typecheck check test:coverage test:smoke scripts/smoke.mjs
 
@@ -47,14 +69,28 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git switch -C $env:BRANCH
           git add -A
-          git commit -m "update dependencies" -m "Regenerated with bun update and the repo's own install scripts, so import_map.json stays in step with bun.lock."
+          if ($env:TABLE) { git commit -m "update dependencies" -m $env:TABLE } else { git commit -m "update dependencies" }
           git push --force origin $env:BRANCH
 
       # Pull requests opened with GITHUB_TOKEN do not trigger workflow runs.
       - name: Open or refresh the pull request
         if: steps.diff.outputs.changed == 'true'
-        env: { GH_TOKEN: "${{ github.token }}", PR_BODY: "${{ steps.diff.outputs.body }}" }
+        env: { GH_TOKEN: "${{ github.token }}", ASSIGNEE: "${{ github.repository_owner }}" }
         run: |
           $existing = gh pr list --head $env:BRANCH --state open --json number --jq '.[0].number'
-          if ($existing) { gh pr edit $existing --body $env:PR_BODY; "::notice title=Pull request refreshed::#$existing" }
-          else { gh pr create --base master --head $env:BRANCH --title "Update dependencies" --body $env:PR_BODY }
+          if ($existing) {
+            $begin = '<!-- deps:begin -->'
+            $end = '<!-- deps:end -->'
+            $current = (gh pr view $existing --json body --jq .body) -join "`n"
+            $i = $current.IndexOf($begin)
+            $j = $current.IndexOf($end)
+            $merged = ($i -ge 0 -and $j -gt $i) ? ($current.Substring(0, $i) + $env:PR_BODY + $current.Substring($j + $end.Length)) : ($current.TrimEnd() + "`n`n" + $env:PR_BODY)
+            gh pr edit $existing --body $merged
+            $url = gh pr view $existing --json url --jq .url
+            $verb = "Refreshed"
+          } else {
+            $url = gh pr create --base master --head $env:BRANCH --title "Update dependencies" --body $env:PR_BODY --assignee $env:ASSIGNEE --label dependencies --label javascript
+            $verb = "Opened"
+          }
+          "## $verb $url`n" >> $env:GITHUB_STEP_SUMMARY
+          $env:PR_BODY >> $env:GITHUB_STEP_SUMMARY
