@@ -17,8 +17,8 @@
 		"dreamcli/": "jsr:/@kjanat/dreamcli@3.0.1/",
 		"sort-package-json": "npm:sort-package-json@4.0.0",
 		"sort-package-json/": "npm:/sort-package-json@4.0.0/",
-		"tsdown": "npm:tsdown@0.22.12",
-		"tsdown/": "npm:/tsdown@0.22.12/"
+		"tsdown": "npm:tsdown@0.22.14",
+		"tsdown/": "npm:/tsdown@0.22.14/"
 	},
 	"scopes": {
 		"./tests/": {
