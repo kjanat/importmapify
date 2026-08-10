@@ -1,0 +1,60 @@
+name: Update dependencies
+run-name: "Update dependencies (${{ github.event_name }})"
+
+on:
+  schedule: [{ cron: "0 6 1 * *" }]
+  workflow_dispatch: null
+
+permissions: { contents: write, pull-requests: write }
+defaults: { run: { shell: pwsh } }
+env: { DENO_NO_PACKAGE_JSON: 1, BRANCH: deps/update }
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    concurrency: { group: update-dependencies, cancel-in-progress: true }
+    steps:
+      - { uses: actions/checkout@v7, with: { fetch-depth: 0 } }
+      - { uses: actions/setup-node@v7, with: { node-version-file: .node-version, package-manager-cache: false } }
+      - uses: oven-sh/setup-bun@v2
+      - { uses: denoland/setup-deno@v2, with: { deno-version: v2.x } }
+      - uses: kjanat/runner@master
+
+      - name: Update dependencies
+        run: bun update --save-text-lockfile
+
+      - name: Regenerate anything the manifest produces
+        run: runner install -q
+
+      - id: diff
+        name: Collect changes
+        run: |
+          $changed = git status --porcelain
+          if (-not $changed) { "changed=false" >> $env:GITHUB_OUTPUT; "::notice title=No updates::Every dependency is already current"; exit 0 }
+          "changed=true" >> $env:GITHUB_OUTPUT
+          $body = "### Updated`n`n``````diff`n" + (git diff -- package.json import_map.json | Out-String) + "`n``````"
+          "body<<PRBODY`n$body`nPRBODY" >> $env:GITHUB_OUTPUT
+
+      - name: Verify before proposing
+        if: steps.diff.outputs.changed == 'true'
+        run: runner install -qs build typecheck check test:coverage test:smoke scripts/smoke.mjs
+
+      - name: Push branch
+        if: steps.diff.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -C $env:BRANCH
+          git add -A
+          git commit -m "update dependencies" -m "Regenerated with bun update and the repo's own install scripts, so import_map.json stays in step with bun.lock."
+          git push --force origin $env:BRANCH
+
+      # Pull requests opened with GITHUB_TOKEN do not trigger workflow runs.
+      - name: Open or refresh the pull request
+        if: steps.diff.outputs.changed == 'true'
+        env: { GH_TOKEN: "${{ github.token }}", PR_BODY: "${{ steps.diff.outputs.body }}" }
+        run: |
+          $existing = gh pr list --head $env:BRANCH --state open --json number --jq '.[0].number'
+          if ($existing) { gh pr edit $existing --body $env:PR_BODY; "::notice title=Pull request refreshed::#$existing" }
+          else { gh pr create --base master --head $env:BRANCH --title "Update dependencies" --body $env:PR_BODY }

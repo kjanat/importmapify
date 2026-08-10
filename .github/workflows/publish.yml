@@ -24,6 +24,8 @@ jobs:
       - { uses: denoland/setup-deno@v2, with: { deno-version: v2.x } }
       - uses: kjanat/runner@master
       - run: runner install -qsf build typecheck check test:coverage test:smoke scripts/smoke.mjs
+      - name: Import map matches the lockfile
+        run: git diff --exit-code -- import_map.json; if ($LASTEXITCODE -ne 0) { "::error file=import_map.json,title=Stale import map::Regenerated import_map.json differs from the committed one; run 'bun install' and commit the result"; exit 1 }
       - run: node --run runbin -- --help
       - name: Validate JSR publish (blocks npm on failure)
         run: deno publish --config deno.json --allow-dirty --dry-run
@@ -43,7 +45,7 @@ jobs:
       - { run: runner install -f }
       - { run: run -q url:npm | Add-Content -Path $env:GITHUB_OUTPUT, id: meta }
       - run: $v=jq -r .version package.json; if ($env:GITHUB_REF_NAME -ne "v$v") { "::error file=package.json,line=3,title=Tag mismatch::Tag $env:GITHUB_REF_NAME does not match package version $v"; exit 1 }
-      - run: 'bun pm pack --quiet | Out-String -OutVariable tarball -NoNewline; $tarball.length -ne 0 ? ("TARBALL=$tarball" >> $env:GITHUB_ENV) : ("::error file=package.json,title=Pack failed::Failed to pack npm package" && exit 1)'
+      - run: 'bun pm pack --quiet | Out-String -OutVariable tarball -NoNewline; if ($tarball.length -eq 0) { "::error file=package.json,title=Pack failed::Failed to pack npm package"; exit 1 }; "TARBALL=$tarball" >> $env:GITHUB_ENV'
       - name: Publish to npm
         env: { NPM_CONFIG_PROVENANCE: "${{ vars.NPM_CONFIG_PROVENANCE }}" }
         run: |
