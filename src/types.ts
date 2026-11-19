@@ -103,7 +103,8 @@ interface CreateImportMapOptions {
 	 */
 	readonly manifest?: string;
 	/**
-	 * Conditional import keys to try in order. Defaults to `import`, then `default`.
+	 * Active condition names for conditional targets. The first key of a target that is in this list wins, in the
+	 * manifest's key order. Defaults to `import` and `default`.
 	 *
 	 * @example
 	 * ```ts

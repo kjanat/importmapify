@@ -104,20 +104,19 @@ function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
 }
 
 /**
- * Resolve a string target from nested conditional import objects.
+ * Resolve a string target from nested conditional import objects, walking each object's keys in
+ * declaration order as Node and Deno do.
  *
  * @param value Exact target or conditional target object.
- * @param conditions Condition names to try in priority order.
- * @returns The first matching string target, or `undefined` when none matches.
+ * @param conditions Active condition names. The target's key order decides between them.
+ * @returns The target of the first active key that resolves, or `undefined` when none does.
  */
 function resolveCondition(value: unknown, conditions: readonly string[]): string | undefined {
 	if (typeof value === 'string') return value;
 	if (!isRecord(value)) return;
-	for (const condition of conditions) {
-		if (condition in value) {
-			const resolved = resolveCondition(value[condition], conditions);
-			if (resolved !== undefined) return resolved;
-		}
+	for (const [condition, branch] of Object.entries(value)) {
+		const resolved = conditions.includes(condition) ? resolveCondition(branch, conditions) : undefined;
+		if (resolved !== undefined) return resolved;
 	}
 }
 

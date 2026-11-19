@@ -193,10 +193,7 @@ export const generateCommand: AnyCommandBuilder = command('generate')
 	)
 	.flag(
 		'condition',
-		flag
-			.array(flag.string())
-			.describe('Condition to try when a target is a conditional object. Repeatable.')
-			.alias('c'),
+		flag.array(flag.string()).describe('Active condition for conditional targets. Repeatable.').alias('c'),
 	)
 	.flag('config', flag.string({ nonEmpty: true }).describe('Config file path; skips discovery.').alias('C'))
 	.flag('no-config', flag.boolean().describe('Skip config file discovery.'))

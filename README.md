@@ -39,7 +39,7 @@ deno run -A jsr:@kjanat/importmapify [...]
 | `--import key=value`        | `-i`  | Extra import entry; repeatable                                            | none                |
 | `--package name=target`     | `-p`  | Package expanded to a conformant bare and trailing-slash pair; repeatable | none                |
 | `--scope prefix::key=value` | `-s`  | Scoped import override; repeatable                                        | none                |
-| `--condition name`          | `-c`  | Condition tried when a target is a conditional object; repeatable         | `import`, `default` |
+| `--condition name`          | `-c`  | Active condition for conditional targets; repeatable                      | `import`, `default` |
 | `--ext name`                | `-e`  | Restrict pattern matches to these file extensions; repeatable             | all files           |
 | `--filter regex`            | `-f`  | Regular expression a pattern target path must match; repeatable           | all files           |
 | `--indent value`            |       | Indentation as a number of spaces or the word `tab`                       | tab                 |
@@ -133,7 +133,7 @@ const out = writeImportMap({
 | ------------------- | ------------------------------------------------------------------------------------------------- | ----------------------- |
 | `root`              | Base directory for the manifest, source targets, and rebasing.                                    | required                |
 | `manifest`          | Manifest path, relative to `root`.                                                                | `package.json`          |
-| `conditions`        | Condition names tried, in order, against conditional targets (`{"import": ..., "default": ...}`). | `['import', 'default']` |
+| `conditions`        | Active condition names for conditional targets (`{"import": ..., "default": ...}`).               | `['import', 'default']` |
 | `packages`          | Package specifiers mapped to targets, each expanded to a conformant bare and trailing-slash pair. | none                    |
 | `additionalImports` | Extra entries merged in after manifest expansion and packages; these win on key collision.        | none                    |
 | `scopes`            | Scope prefixes mapped to scope-specific import overrides.                                         | none                    |
@@ -321,7 +321,8 @@ Each matched file yields one specifier, the wildcard substituted into the key. A
 ## Scope and constraints
 
 - Only the manifest's top-level `imports` field is read.
-- Conditional targets resolve via `conditions`, tried in order, recursively. A target matching no condition is skipped.
+- Conditional targets resolve as Deno resolves them: the first key of the target that is in `conditions` wins, in the
+  manifest's key order, recursively. A target matching no condition is skipped.
 - Pattern keys and targets must both contain `*`, or neither should; a mismatch throws.
 - Expandable pattern targets must point to local files beneath `root`. Target directories are scanned recursively; a
   missing directory produces no entries.
