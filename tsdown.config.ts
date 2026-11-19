@@ -54,7 +54,7 @@ export default defineConfig({
 			const sorted = sortPackageJson(contents);
 			if (sorted !== contents) await fs.writeFile(packagePath, sorted, { encoding: 'utf8' });
 			execFileSync('npm', ['pkg', 'fix'], { stdio: 'ignore' });
-			execFileSync('dprint', ['fmt', 'package.json'], { stdio: 'ignore' });
+			execFileSync('kfmt', ['package.json'], { stdio: 'ignore' });
 
 			const denoPath = new URL('./deno.json', import.meta.url);
 			const denoJson = await fs
@@ -88,7 +88,7 @@ export default defineConfig({
 			await fs.writeFile(denoPath, `${JSON.stringify(deno, null, '\t')}\n`, {
 				encoding: 'utf8',
 			});
-			execFileSync('dprint', ['fmt'], { stdio: 'ignore' });
+			execFileSync('kfmt', [], { stdio: 'ignore' });
 		},
 	},
 });
