@@ -6,8 +6,8 @@ import { afterEach, describe, expect, it } from 'bun:test';
 import { configToOptions, discoverConfig, loadConfig, mergeScopes } from '#src/config';
 
 const dirs: string[] = [];
-const NON_OBJECT_DEFAULT = /must have a default export object/;
-const LOAD_FAILURE = /Cannot load config/;
+const NON_OBJECT_DEFAULT = /must have a default export object/u;
+const LOAD_FAILURE = /Cannot load config/u;
 
 afterEach(() => {
 	for (const dir of dirs.splice(0)) fs.rmSync(dir, { recursive: true, force: true });
@@ -122,15 +122,15 @@ describe('configToOptions', () => {
 
 	it('reads filter entries as RegExps and predicates', () => {
 		const predicate = (target: string) => target.endsWith('.ts');
-		const result = configToOptions({ filter: [/internal/, predicate] }, '/repo');
-		expect(result.filter).toEqual([/internal/, predicate]);
+		const result = configToOptions({ filter: [/internal/u, predicate] }, '/repo');
+		expect(result.filter).toEqual([/internal/u, predicate]);
 	});
 
 	it('drops extensions and filter values of the wrong shape', () => {
 		expect(configToOptions({ extensions: 'ts' }, '/repo').extensions).toBeUndefined();
-		expect(configToOptions({ extensions: [/internal/] }, '/repo').extensions).toBeUndefined();
+		expect(configToOptions({ extensions: [/internal/u] }, '/repo').extensions).toBeUndefined();
 		expect(configToOptions({ filter: ['ts'] }, '/repo').filter).toBeUndefined();
-		expect(configToOptions({ filter: /internal/ }, '/repo').filter).toBeUndefined();
+		expect(configToOptions({ filter: /internal/u }, '/repo').filter).toBeUndefined();
 	});
 
 	it('keeps function hooks and drops non-function entries', () => {

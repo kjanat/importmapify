@@ -16,7 +16,7 @@ const DEFAULT_CONDITIONS = ['import', 'default'] as const;
 /** Default output filename for a written import map. */
 const DEFAULT_OUT = 'import_map.json';
 
-const SCHEME_PREFIX = /^(jsr|npm):(?!\/)/;
+const SCHEME_PREFIX = /^(jsr|npm):(?!\/)/u;
 
 /**
  * Normalize a location to a filesystem path.

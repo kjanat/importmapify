@@ -1,13 +1,13 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { cwd } from 'node:process';
-import type { AnyCommandBuilder } from 'dreamcli';
+import type { ArgBuilder, ArgConfig, CommandBuilder, FlagBuilder, FlagConfig } from 'dreamcli';
 import { CLIError, command, flag } from 'dreamcli';
 import { assign, configToOptions, discoverConfig, loadConfig, mergeScopes } from '#src/config';
 import { DEFAULT_OUT, createImportMap, formatImportMap, resolveOut, toPath } from '#src/map';
 import type { Config, HookContext, PathOrUrl, TargetFilter, WriteImportMapOptions } from '#src/types';
 
-const SPACE_COUNT = /^\d+$/;
+const SPACE_COUNT = /^\d+$/u;
 
 type Scope = readonly [prefix: string, key: string, value: string];
 
@@ -137,8 +137,14 @@ async function resolveGenerateOptions(flags: GenerateFlags): Promise<ResolvedGen
 	return options;
 }
 
+type ErasedCommand = CommandBuilder<
+	Record<string, FlagBuilder<FlagConfig>>,
+	Record<string, ArgBuilder<ArgConfig>>,
+	Record<string, unknown>
+>;
+
 /** DreamCLI command that writes, checks, or prints an expanded Deno import map. */
-export const generateCommand: AnyCommandBuilder = command('generate')
+export const generateCommand: ErasedCommand = command('generate')
 	.description('Expand package.json subpath-pattern imports into a Deno import map.')
 	.flag(
 		'root',

@@ -52,10 +52,10 @@ const [docsDir = '.denodocs', nodesPath = 'nodes.json', ref = 'master', assetsDi
 	process.argv.slice(2);
 
 const HASH_LENGTH = 8;
-const CSS_EXT = /\.css$/;
-const ENCODED_BYTE = /%(?=[0-9A-Fa-f]{2})/g;
-const LOCAL_ENCODED_TARGET = /(["'/])((?:[^"'<>\s]*%[0-9A-Fa-f]{2})+[^"'<>\s]*\.html)/g;
-const MEMBER_PREFIX = /^(property|method|call_signature|constructor)_/;
+const CSS_EXT = /\.css$/u;
+const ENCODED_BYTE = /%(?=[0-9A-Fa-f]{2})/gu;
+const LOCAL_ENCODED_TARGET = /(["'/])((?:[^"'<>\s]*%[0-9A-Fa-f]{2})+[^"'<>\s]*\.html)/gu;
+const MEMBER_PREFIX = /^(property|method|call_signature|constructor)_/u;
 
 const NAV_SCRIPT =
 	'<script>(()=>{const d=document.querySelector("details.catNav");if(!d)return;const mq=matchMedia("(width < 1024px)");if(mq.matches)d.open=false;mq.addEventListener("change",(e)=>{d.open=!e.matches});const t=document.querySelector(".catToggle");const nav=document.getElementById("topnav");t?.addEventListener("click",()=>{d.open=!d.open;t.setAttribute("aria-expanded",String(d.open));const u=d.querySelector("ul");const box=d.closest(".ddoc");if(d.open&&u&&nav&&box){u.style.top=String(nav.getBoundingClientRect().bottom-box.getBoundingClientRect().top+8)+"px"}});document.addEventListener("click",(e)=>{if(d.open&&e.target instanceof Node&&!d.contains(e.target)&&!t.contains(e.target)){d.open=false;t.setAttribute("aria-expanded","false")}})})()</script>';
@@ -64,7 +64,7 @@ const CAT_TOGGLE =
 	'<button class="catToggle" type="button" aria-label="Categories" aria-expanded="false">≡</button>';
 
 const pkg: PackageManifest = JSON.parse(readFileSync('package.json', 'utf8'));
-const repo = pkg.repository.url.replace(/^git\+/, '').replace(/\.git$/, '');
+const repo = pkg.repository.url.replace(/^git\+/u, '').replace(/\.git$/u, '');
 const root = process.cwd();
 
 copyFileSync(path.join(assetsDir, 'favicon.svg'), path.join(docsDir, 'favicon.svg'));

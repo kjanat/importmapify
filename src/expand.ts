@@ -15,7 +15,7 @@ interface Pattern {
 }
 
 function escapeRegExp(value: string): string {
-	return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+	return value.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
 }
 
 function targetMatcher(pattern: Pattern): RegExp {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 import { expandPattern, isRebasableTarget, parsePattern, rebaseTarget, resolveCondition } from '#src/expand';
 
-const PATTERN_MISMATCH = /both sides must contain/;
+const PATTERN_MISMATCH = /both sides must contain/u;
 
 describe('parsePattern', () => {
 	it('returns undefined for two exact strings', () => {

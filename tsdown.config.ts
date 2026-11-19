@@ -27,7 +27,7 @@ export default defineConfig({
 		async customExports(exports) {
 			const jsToDts = {
 				// biome-ignore lint/performance/useTopLevelRegex: explanation
-				from: /\.(?<prefix>c|m)?js$/,
+				from: /\.(?<prefix>c|m)?js$/u,
 				to: '.d.$<prefix>ts',
 			};
 			await Promise.all(
