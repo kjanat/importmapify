@@ -82,10 +82,18 @@ describe('resolveCondition', () => {
 		expect(resolveCondition('./src/config.ts', ['import', 'default'])).toBe('./src/config.ts');
 	});
 
-	it('picks the first matching condition in order', () => {
-		expect(resolveCondition({ default: './default.ts', import: './import.ts' }, ['import', 'default'])).toBe(
+	it('picks the first key of the target that is an active condition', () => {
+		const target = { default: './default.ts', import: './import.ts' };
+		expect(resolveCondition(target, ['import', 'default'])).toBe('./default.ts');
+		expect(resolveCondition(target, ['default', 'import'])).toBe('./default.ts');
+		expect(resolveCondition({ import: './import.ts', default: './default.ts' }, ['default', 'import'])).toBe(
 			'./import.ts',
 		);
+	});
+
+	it('continues past an active key whose nested branch matches no condition', () => {
+		const target = { import: { browser: './browser.ts' }, default: './default.ts' };
+		expect(resolveCondition(target, ['import', 'default'])).toBe('./default.ts');
 	});
 
 	it('recurses into a nested condition object', () => {
@@ -101,7 +109,13 @@ describe('resolveCondition', () => {
 	it('returns undefined for non-string, non-object values', () => {
 		expect(resolveCondition(42, ['import', 'default'])).toBeUndefined();
 		expect(resolveCondition(null, ['import', 'default'])).toBeUndefined();
-		expect(resolveCondition(['a'], ['import', 'default'])).toBeUndefined();
+		expect(resolveCondition([], ['import', 'default'])).toBeUndefined();
+	});
+
+	it('resolves a fallback array to its first element that resolves', () => {
+		expect(
+			resolveCondition([{ worker: './worker.ts' }, './default.ts', './later.ts'], ['import', 'default']),
+		).toBe('./default.ts');
 	});
 });
 

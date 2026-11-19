@@ -188,7 +188,7 @@ function rebaseScopePrefix(root: string, relativeTo: string, scope: string): str
  * Expand a package's exact and patterned `imports` into a Deno import map.
  *
  * Pattern targets are matched against files below {@link CreateImportMapOptions.root | root}.
- * Conditional targets use the configured condition order, and additional imports are applied last.
+ * Conditional targets resolve in the manifest's key order, and additional imports are applied last.
  *
  * @example
  * ```ts

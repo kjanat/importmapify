@@ -110,7 +110,7 @@ describe('createImportMap', () => {
 		});
 	});
 
-	it('resolves a conditional target using the default condition order', () => {
+	it('resolves a conditional target using the default conditions', () => {
 		const root = fixture(
 			{ '#config': { types: './config.d.ts', import: './config.ts', default: './config.js' } },
 			['config.ts'],
@@ -118,11 +118,21 @@ describe('createImportMap', () => {
 		expect(createImportMap({ root })).toEqual({ imports: { '#config': './config.ts' } });
 	});
 
-	it('resolves a conditional target using a custom condition order', () => {
+	it('resolves a conditional target using custom conditions', () => {
 		const root = fixture({ '#config': { deno: './config.deno.ts', default: './config.ts' } });
 		expect(createImportMap({ root, conditions: ['deno', 'import', 'default'] })).toEqual({
 			imports: { '#config': './config.deno.ts' },
 		});
+	});
+
+	it('lets the manifest key order decide between active conditions, as Deno resolves it', () => {
+		const root = fixture({ '#config': { default: './config.js', import: './config.ts' } });
+		expect(createImportMap({ root })).toEqual({ imports: { '#config': './config.js' } });
+	});
+
+	it('maps a fallback array target to its first element that resolves', () => {
+		const root = fixture({ '#config': [{ worker: './config.worker.ts' }, './config.ts'] });
+		expect(createImportMap({ root })).toEqual({ imports: { '#config': './config.ts' } });
 	});
 
 	it('skips an entry whose conditional target matches no condition', () => {
