@@ -130,6 +130,11 @@ describe('createImportMap', () => {
 		expect(createImportMap({ root })).toEqual({ imports: { '#config': './config.js' } });
 	});
 
+	it('maps a fallback array target to its first element that resolves', () => {
+		const root = fixture({ '#config': [{ worker: './config.worker.ts' }, './config.ts'] });
+		expect(createImportMap({ root })).toEqual({ imports: { '#config': './config.ts' } });
+	});
+
 	it('skips an entry whose conditional target matches no condition', () => {
 		const root = fixture({ '#config': { require: './config.cjs' }, '#kept': './kept.ts' });
 		expect(createImportMap({ root })).toEqual({ imports: { '#kept': './kept.ts' } });

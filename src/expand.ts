@@ -104,18 +104,31 @@ function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
 }
 
 /**
- * Resolve a string target from nested conditional import objects, walking each object's keys in
- * declaration order as Node and Deno do.
+ * List the branches a target may resolve through: every element of a fallback array, or the active keys
+ * of a conditional object in declaration order.
  *
- * @param value Exact target or conditional target object.
+ * @param value Fallback array, conditional target object, or any other value.
+ * @param conditions Active condition names.
+ * @returns Branches to try in order.
+ */
+function branches(value: unknown, conditions: readonly string[]): readonly unknown[] {
+	if (Array.isArray(value)) return value;
+	if (!isRecord(value)) return [];
+	return Object.entries(value).flatMap(([condition, branch]) => (conditions.includes(condition) ? [branch] : []));
+}
+
+/**
+ * Resolve a string target from fallback arrays and nested conditional import objects, walking each
+ * object's keys in declaration order as Node and Deno do.
+ *
+ * @param value Exact target, fallback array, or conditional target object.
  * @param conditions Active condition names. The target's key order decides between them.
- * @returns The target of the first active key that resolves, or `undefined` when none does.
+ * @returns The target of the first branch that resolves, or `undefined` when none does.
  */
 function resolveCondition(value: unknown, conditions: readonly string[]): string | undefined {
 	if (typeof value === 'string') return value;
-	if (!isRecord(value)) return;
-	for (const [condition, branch] of Object.entries(value)) {
-		const resolved = conditions.includes(condition) ? resolveCondition(branch, conditions) : undefined;
+	for (const branch of branches(value, conditions)) {
+		const resolved = resolveCondition(branch, conditions);
 		if (resolved !== undefined) return resolved;
 	}
 }

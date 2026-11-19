@@ -109,7 +109,13 @@ describe('resolveCondition', () => {
 	it('returns undefined for non-string, non-object values', () => {
 		expect(resolveCondition(42, ['import', 'default'])).toBeUndefined();
 		expect(resolveCondition(null, ['import', 'default'])).toBeUndefined();
-		expect(resolveCondition(['a'], ['import', 'default'])).toBeUndefined();
+		expect(resolveCondition([], ['import', 'default'])).toBeUndefined();
+	});
+
+	it('resolves a fallback array to its first element that resolves', () => {
+		expect(
+			resolveCondition([{ worker: './worker.ts' }, './default.ts', './later.ts'], ['import', 'default']),
+		).toBe('./default.ts');
 	});
 });
 

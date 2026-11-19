@@ -322,7 +322,8 @@ Each matched file yields one specifier, the wildcard substituted into the key. A
 
 - Only the manifest's top-level `imports` field is read.
 - Conditional targets resolve as Deno resolves them: the first key of the target that is in `conditions` wins, in the
-  manifest's key order, recursively. A target matching no condition is skipped.
+  manifest's key order, recursively. A fallback array resolves to its first element that resolves. A target matching no
+  condition is skipped.
 - Pattern keys and targets must both contain `*`, or neither should; a mismatch throws.
 - Expandable pattern targets must point to local files beneath `root`. Target directories are scanned recursively; a
   missing directory produces no entries.
