@@ -27,6 +27,7 @@ function targetMatcher(pattern: Pattern): RegExp {
 		.join('');
 	return new RegExp(
 		`^${escapeRegExp(pattern.targetPrefix)}(?<wildcard>.+)${escapeRegExp(firstSuffix)}${repeatedSuffixes}$`,
+		'u',
 	);
 }
 

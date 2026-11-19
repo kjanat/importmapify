@@ -16,7 +16,7 @@ const DEFAULT_CONDITIONS = ['import', 'default'] as const;
 /** Default output filename for a written import map. */
 const DEFAULT_OUT = 'import_map.json';
 
-const SCHEME_PREFIX = /^(jsr|npm):(?!\/)/u;
+const SCHEME_PREFIX = /^(?<scheme>jsr|npm):(?!\/)/u;
 
 /**
  * Normalize a location to a filesystem path.
@@ -287,7 +287,7 @@ function writeImportMap(options: WriteImportMapOptions): string {
 
 function directoryTarget(target: string): string {
 	const slashed = target.endsWith('/') ? target : `${target}/`;
-	return slashed.replace(SCHEME_PREFIX, '$1:/');
+	return slashed.replace(SCHEME_PREFIX, '$<scheme>:/');
 }
 
 /**
