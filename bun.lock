@@ -9,7 +9,7 @@
       },
       "devDependencies": {
         "@arethetypeswrong/core": "^0.18.5",
-        "@dprint/biome": "^0.13.12",
+        "@dprint/biome": "^0.15.0",
         "@dprint/exec": "^0.7.3",
         "@dprint/markdown": "^0.22.1",
         "@types/bun": "^1.4.2",
@@ -56,7 +56,7 @@
 
     "@dprint/android-x64": ["@dprint/android-x64@0.55.2", "", { "os": "android", "cpu": "x64" }, "sha512-BvcqquD94dSYQP2FzBuojU/8vITpwz80uAkub2xCCx5g7zYdUZ98tK+N3GKfRS5AUJ1LpRPJgbO09rRLEo8leA=="],
 
-    "@dprint/biome": ["@dprint/biome@0.13.12", "", {}, "sha512-F/xidyiYRwhQNHZwJ3Slt6Avb7vUwXhs29HMMRvdily+ohVWSGHitdODoMLfrIanAwK1mpAa7q6sDQK6kzv8ng=="],
+    "@dprint/biome": ["@dprint/biome@0.15.7", "", {}, "sha512-zmxH5c7NHEqGIjYIJpuGv+pANBbM6KuOr4SSoUU3+U7Fgz9iIsElItiTYdgLE1tAFu4ZnWiTCbsc5wGhk5d6WQ=="],
 
     "@dprint/darwin-arm64": ["@dprint/darwin-arm64@0.55.2", "", { "os": "darwin", "cpu": "arm64" }, "sha512-HjzasuPaC0EBHxEpS3Px/OPcxqZYln37xuAyYE0GFAhDuaotZEUpM8VE05Tzo4E32y7LKgLPT8CZVtEG5Ck7mQ=="],
 
