@@ -67,6 +67,14 @@ describe('expandPattern', () => {
 			'#copy/b': './src/b/copy-b.ts',
 		});
 	});
+
+	it('emits no specifier for a file the wildcard would match with empty text', () => {
+		const pattern = parsePattern('#lib/*.js', './src/lib-*.js');
+		if (pattern === undefined) throw new Error('expected a pattern');
+		expect(expandPattern(pattern, ['lib-.js', 'lib-bytes.js'])).toEqual({
+			'#lib/bytes.js': './src/lib-bytes.js',
+		});
+	});
 });
 
 describe('resolveCondition', () => {
