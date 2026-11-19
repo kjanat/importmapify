@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it } from 'bun:test';
 import { createImportMap, defineConfig, formatImportMap } from '#src/map';
 
 const roots: string[] = [];
-const PATTERN_MISMATCH = /both sides must contain/;
+const PATTERN_MISMATCH = /both sides must contain/u;
 
 afterEach(() => {
 	for (const root of roots.splice(0)) fs.rmSync(root, { recursive: true, force: true });
@@ -91,7 +91,7 @@ describe('createImportMap', () => {
 
 	it('drops targets rejected by a filter RegExp', () => {
 		const root = fixture({ '#dist/*': './dist/*.js' }, ['dist/auto.js', 'dist/internal-qo9O8jzH.js']);
-		expect(createImportMap({ root, filter: [/^(?!.*internal)/] })).toEqual({
+		expect(createImportMap({ root, filter: [/^(?!.*internal)/u] })).toEqual({
 			imports: { '#dist/auto': './dist/auto.js' },
 		});
 	});
@@ -105,7 +105,7 @@ describe('createImportMap', () => {
 
 	it('requires the extension whitelist and every filter to pass', () => {
 		const root = fixture({ '#dist/*': './dist/*' }, ['dist/keep.js', 'dist/keep.ts', 'dist/skip.js']);
-		expect(createImportMap({ root, extensions: ['js'], filter: [/keep/] })).toEqual({
+		expect(createImportMap({ root, extensions: ['js'], filter: [/keep/u] })).toEqual({
 			imports: { '#dist/keep.js': './dist/keep.js' },
 		});
 	});
