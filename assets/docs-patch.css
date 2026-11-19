@@ -104,13 +104,13 @@ section.section:has(> div > h2 .contextLink):not(section.section:has(> div > h2 
 		font-size: 0.875rem;
 	}
 
+	.dark .catNav > ul a {
+		border-color: rgb(55 65 81);
+	}
+
 	.catNav > ul li.active a {
 		background: rgb(229 231 235);
 		font-weight: 600;
-	}
-
-	.dark .catNav > ul a {
-		border-color: rgb(55 65 81);
 	}
 
 	.dark .catNav > ul li.active a {

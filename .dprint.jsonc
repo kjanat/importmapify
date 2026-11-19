@@ -28,27 +28,21 @@
 	"yaml": { "printWidth": 200 },
 	"exec": {
 		"cwd": "${configDir}",
-		"associations": ["**/package.json", "**/*.toml"],
+		"associations": ["**/package.json"],
 		"commands": [
 			{
 				"associations": ["**/package.json"],
 				"command": "run -q sort-package-json --stdin",
 				"fileNames": ["package.json"]
-			},
-			{
-				"associations": ["**/*.toml"],
-				"command": "run -q tombi format - --stdin-filename {{file_path}}",
-				"exts": ["toml"],
-				"cacheKeyFiles": ["tombi.toml", "bun.lock"]
 			}
 		]
 	},
 	"excludes": ["**/node_modules", "**/*-lock.json", "**/bun.lock", "**/dist", "**/coverage"],
 	"plugins": [
-		"npm:@dprint/exec@0.7.3/plugin.json@704701df449dd7e942a71144773778ac529d68c2e4657bfc236d393b898b9a67",
 		"npm:@dprint/biome@0.13.5",
 		"npm:@dprint/markdown@0.22.1",
 		"https://plugins.dprint.dev/g-plane/pretty_yaml-v0.6.0.wasm",
-		"https://plugins.dprint.dev/g-plane/markup_fmt-v0.27.3.wasm"
+		"https://plugins.dprint.dev/g-plane/markup_fmt-v0.27.3.wasm",
+		"https://plugins.dprint.dev/kjanat/tombi-0.2.1.wasm"
 	]
 }

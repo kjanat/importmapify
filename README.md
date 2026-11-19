@@ -77,8 +77,8 @@ order (first match wins): `importmapify.config.{mjs,cjs,js,ts,mts,cts}`, then `.
 import { defineConfig } from 'importmapify';
 
 export default defineConfig({
-  packages: { dreamcli: 'jsr:@kjanat/dreamcli@^3' },
-  extensions: ['ts'],
+	packages: { dreamcli: 'jsr:@kjanat/dreamcli@^3' },
+	extensions: ['ts'],
 });
 ```
 
@@ -87,8 +87,8 @@ Or annotate a plain object, no import:
 ```js
 /** @type {import('importmapify').Config} */
 export default {
-  packages: { dreamcli: 'jsr:@kjanat/dreamcli@^3' },
-  extensions: ['ts'],
+	packages: { dreamcli: 'jsr:@kjanat/dreamcli@^3' },
+	extensions: ['ts'],
 };
 ```
 
@@ -106,16 +106,16 @@ runtime (Bun, Deno, or Node \>= 22.6); on older Node use a `.mjs`/`.cjs`/`.js` c
 import { writeImportMap } from 'importmapify';
 
 const out = writeImportMap({
-  root: import.meta.dirname,
-  out: 'import_map.json',
-  additionalImports: {
-    'bun:test': './node_modules/bun-types/test.d.ts',
-  },
-  scopes: {
-    './tests/': {
-      'dreamcli/testkit': 'jsr:@kjanat/dreamcli@^3/testkit',
-    },
-  },
+	root: import.meta.dirname,
+	out: 'import_map.json',
+	additionalImports: {
+		'bun:test': './node_modules/bun-types/test.d.ts',
+	},
+	scopes: {
+		'./tests/': {
+			'dreamcli/testkit': 'jsr:@kjanat/dreamcli@^3/testkit',
+		},
+	},
 });
 ```
 
@@ -168,11 +168,11 @@ Add dependencies with `packages`. Each entry expands to the bare specifier plus 
 import { writeImportMap } from 'importmapify';
 
 writeImportMap({
-  root: import.meta.dirname,
-  packages: {
-    dreamcli: 'jsr:@kjanat/dreamcli@^3',
-    ansispeck: 'npm:ansispeck@^0.2',
-  },
+	root: import.meta.dirname,
+	packages: {
+		dreamcli: 'jsr:@kjanat/dreamcli@^3',
+		ansispeck: 'npm:ansispeck@^0.2',
+	},
 });
 // dreamcli, dreamcli/ -> jsr:/@kjanat/dreamcli@^3/, ansispeck, ansispeck/ -> npm:/ansispeck@^0.2/
 ```
@@ -224,9 +224,9 @@ import { execSync } from 'node:child_process';
 import { defineConfig } from 'importmapify';
 
 export default defineConfig({
-  hooks: {
-    'generate:before': () => execSync('bun run build', { stdio: 'inherit' }),
-  },
+	hooks: {
+		'generate:before': () => execSync('bun run build', { stdio: 'inherit' }),
+	},
 });
 ```
 
@@ -236,8 +236,8 @@ export default defineConfig({
 import { writeImportMap } from 'importmapify';
 
 writeImportMap({
-  root: new URL('..', import.meta.url),
-  out: new URL('./import_map.json', import.meta.url),
+	root: new URL('..', import.meta.url),
+	out: new URL('./import_map.json', import.meta.url),
 });
 ```
 
@@ -250,20 +250,20 @@ resolves every version out of `bun.lock` so the map cannot drift from the lockfi
 import lockfile from './bun.lock' with { type: 'jsonc' };
 
 function lockSpec(name: string): string {
-  const entry: Bun.BunLockFilePackageArray | undefined = lockfile.packages[name];
-  if (entry === undefined) throw new Error(`bun.lock is missing package "${name}"`);
-  return entry[0];
+	const entry: Bun.BunLockFilePackageArray | undefined = lockfile.packages[name];
+	if (entry === undefined) throw new Error(`bun.lock is missing package "${name}"`);
+	return entry[0];
 }
 
 const config: import('importmapify').Config = {
-  packages: {
-    dreamcli: `jsr:${lockSpec('dreamcli')}`,
-  },
-  scopes: {
-    './tests/': {
-      'dreamcli/testkit': `jsr:${lockSpec('dreamcli')}/testkit`,
-    },
-  },
+	packages: {
+		dreamcli: `jsr:${lockSpec('dreamcli')}`,
+	},
+	scopes: {
+		'./tests/': {
+			'dreamcli/testkit': `jsr:${lockSpec('dreamcli')}/testkit`,
+		},
+	},
 };
 
 export default config;
@@ -457,8 +457,8 @@ const root = '/path/to/source-tree';
 const importMap = writeImportMap({ root, out: 'import_map.json' });
 
 const documentation = execFileSync('deno', ['doc', '--import-map', importMap, '--json', 'src/index.ts'], {
-  cwd: root,
-  encoding: 'utf8',
+	cwd: root,
+	encoding: 'utf8',
 });
 ```
 
@@ -472,8 +472,8 @@ import { doc } from 'jsr:@deno/doc';
 const entries = [new URL('./src/index.ts', import.meta.url).href];
 const importMap = new URL('./import_map.json', import.meta.url).href;
 const nodes = await doc(entries, {
-  importMap,
-  printImportMapDiagnostics: false,
+	importMap,
+	printImportMapDiagnostics: false,
 });
 ```
 

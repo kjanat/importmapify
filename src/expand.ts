@@ -15,7 +15,7 @@ interface Pattern {
 }
 
 function escapeRegExp(value: string): string {
-	return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+	return value.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
 }
 
 function targetMatcher(pattern: Pattern): RegExp {
@@ -27,6 +27,7 @@ function targetMatcher(pattern: Pattern): RegExp {
 		.join('');
 	return new RegExp(
 		`^${escapeRegExp(pattern.targetPrefix)}(?<wildcard>.+)${escapeRegExp(firstSuffix)}${repeatedSuffixes}$`,
+		'u',
 	);
 }
 

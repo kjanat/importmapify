@@ -43,14 +43,21 @@
 	"bin": {
 		"importmapify": "dist/mod.mjs"
 	},
-	"files": ["/dist", "/README.md", "/LICENSE", "/package.json", "/deno.json", "/import_map.json"],
+	"files": [
+		"/dist",
+		"/README.md",
+		"/LICENSE",
+		"/package.json",
+		"/deno.json",
+		"/import_map.json"
+	],
 	"scripts": {
 		"bd": "tsdown",
 		"build": "tsdown",
 		"build:watch": "tsdown --watch",
 		"check": "biome check",
 		"check:fix": "biome check --fix",
-		"fmt": "biome check --fix 2>/dev/null; dprint fmt",
+		"fmt": "biome check --fix 2>/dev/null; bunx @kjanat/fmt",
 		"importmap": "bunx importmapify@latest",
 		"jsr:publish": "bunx jsr publish --allow-dirty",
 		"lint": "biome lint",
@@ -67,26 +74,24 @@
 		"volta:bump": "volta pin node@latest npm@11; node --version>.node-version; run bd"
 	},
 	"dependencies": {
-		"dreamcli": "npm:@kjanat/dreamcli@^3.0.1"
+		"dreamcli": "npm:@kjanat/dreamcli@^5.4.0"
 	},
 	"devDependencies": {
 		"@arethetypeswrong/core": "^0.18.5",
 		"@dprint/biome": "^0.15.0",
-		"@dprint/exec": "^0.7.3",
-		"@dprint/markdown": "^0.22.1",
-		"@types/bun": "^1.4.2",
+		"@dprint/markdown": "^0.29.0",
+		"@kjanat/fmt": "^0.64.1",
+		"@types/bun": "^1.4.4",
 		"@types/deno": "^2.7.0",
-		"@types/node": "^26.6.3",
+		"@types/node": "^26.6.6",
 		"@typescript/native": "npm:typescript@^7.0.2",
-		"ansispeck": "^0.4.2",
-		"biome": "npm:@biomejs/biome@^2.5.15",
-		"dprint": "^0.55.2",
-		"publint": "^0.3.24",
-		"runner-run": "^0.25.1",
-		"sort-package-json": "^4.0.0",
-		"tombi": "^1.6.1",
-		"tsdown": "^0.22.14",
-		"typescript": "^6.0.3",
+		"ansispeck": "^0.4.3",
+		"biome": "npm:@biomejs/biome@^2.6.8",
+		"publint": "^0.3.25",
+		"runner-run": "^0.28.0",
+		"sort-package-json": "^4.1.0",
+		"tsdown": "^0.23.7",
+		"typescript": "^7.0.2",
 		"unplugin-unused": "^0.6.0"
 	},
 	"packageManager": "bun@1.4.4",

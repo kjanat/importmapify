@@ -9,20 +9,20 @@
 		"#src/mod": "./src/mod.ts",
 		"#src/types": "./src/types.ts",
 		"@types/bun": "npm:@types/bun@1.4.4",
-		"ansispeck": "jsr:@kjanat/ansispeck@0.4.2",
-		"ansispeck/": "jsr:/@kjanat/ansispeck@0.4.2/",
-		"bun": "npm:bun-types@1.4.2",
-		"bun:test": "npm:bun-types@1.4.2/test.d.ts",
-		"dreamcli": "jsr:@kjanat/dreamcli@3.0.1",
-		"dreamcli/": "jsr:/@kjanat/dreamcli@3.0.1/",
-		"sort-package-json": "npm:sort-package-json@4.0.0",
-		"sort-package-json/": "npm:/sort-package-json@4.0.0/",
-		"tsdown": "npm:tsdown@0.22.14",
-		"tsdown/": "npm:/tsdown@0.22.14/"
+		"ansispeck": "jsr:@kjanat/ansispeck@0.4.3",
+		"ansispeck/": "jsr:/@kjanat/ansispeck@0.4.3/",
+		"bun": "npm:bun-types@1.4.4",
+		"bun:test": "npm:bun-types@1.4.4/test.d.ts",
+		"dreamcli": "jsr:@kjanat/dreamcli@5.4.0",
+		"dreamcli/": "jsr:/@kjanat/dreamcli@5.4.0/",
+		"sort-package-json": "npm:sort-package-json@4.1.0",
+		"sort-package-json/": "npm:/sort-package-json@4.1.0/",
+		"tsdown": "npm:tsdown@0.23.7",
+		"tsdown/": "npm:/tsdown@0.23.7/"
 	},
 	"scopes": {
 		"./tests/": {
-			"dreamcli/testkit": "jsr:@kjanat/dreamcli@3.0.1/testkit"
+			"dreamcli/testkit": "jsr:@kjanat/dreamcli@5.4.0/testkit"
 		}
 	}
 }

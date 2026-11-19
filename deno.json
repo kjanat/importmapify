@@ -44,7 +44,7 @@
 			"description": "lint docs on exported symbols"
 		},
 		"format:docs": {
-			"command": "bunx dprint fmt --includes-override '.denodocs/**/*.{html,css,js,json}' --excludes-override='!.denodocs/**/*.{html,css,js,json}' --no-gitignore --allow-no-files",
+			"command": "bunx @kjanat/fmt --includes-override '.denodocs/**/*.{html,css,js,json}' --excludes-override='!.denodocs/**/*.{html,css,js,json}' --no-gitignore --allow-no-files",
 			"description": "format the output docs (requires bun)"
 		},
 		"ci:docs": "run -s doc:html doc:json format:docs"
