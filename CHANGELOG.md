@@ -6,12 +6,15 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-11-19
+
 ### Changed
 
 - **Breaking:** conditional targets resolve in the manifest's key order, as Deno, Node and Bun resolve `package.json`
   `imports`. `conditions` and `--condition` name the set of active conditions, and the order of that list has no effect.
   A target such as `{ "default": "./a.js", "deno": "./b.js" }` maps to `./a.js` even with `deno` active. To prefer a
   condition, put its key first in `package.json`.
+- The CLI runs on dreamcli 5.4.0.
 
 ### Fixed
 
@@ -204,7 +207,8 @@ All notable changes to this project are documented here. The format follows
   deterministically-sorted entries a Deno import map needs, so `deno doc`, `deno check`, and the Deno LSP can resolve
   Node-style subpath imports. Ships as both a library and a CLI.
 
-[Unreleased]: https://github.com/kjanat/importmapify/compare/v1.7.0...HEAD
+[Unreleased]: https://github.com/kjanat/importmapify/compare/v2.0.0...HEAD
+[2.0.0]: https://github.com/kjanat/importmapify/compare/v1.7.0...v2.0.0
 [1.7.0]: https://github.com/kjanat/importmapify/compare/v1.6.1...v1.7.0
 [1.6.1]: https://github.com/kjanat/importmapify/compare/v1.6.0...v1.6.1
 [1.6.0]: https://github.com/kjanat/importmapify/compare/v1.5.0...v1.6.0
