@@ -109,5 +109,8 @@
 		"provenance": true,
 		"registry": "https://registry.npmjs.org/",
 		"tag": "latest"
-	}
+	},
+	"trustedDependencies": [
+		"@kprint/kprint"
+	]
 }
