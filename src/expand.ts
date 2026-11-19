@@ -26,7 +26,7 @@ function targetMatcher(pattern: Pattern): RegExp {
 		.map((suffix) => `\\k<wildcard>${escapeRegExp(suffix)}`)
 		.join('');
 	return new RegExp(
-		`^${escapeRegExp(pattern.targetPrefix)}(?<wildcard>.*)${escapeRegExp(firstSuffix)}${repeatedSuffixes}$`,
+		`^${escapeRegExp(pattern.targetPrefix)}(?<wildcard>.+)${escapeRegExp(firstSuffix)}${repeatedSuffixes}$`,
 	);
 }
 
